@@ -1,0 +1,5 @@
+# src/constants/metrics.py
+
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 800
+WINDOW_TITLE = "DEMO"
