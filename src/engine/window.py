@@ -1,15 +1,36 @@
 import glfw
 from OpenGL.GL import *
-from src.constants import metrics, colors, shaders_path
-from src.utils.colors import lerp_color
-from src.engine.shader import Shader
+from OpenGL.GLU import *
+from src.constants import metrics
+from src.ui.lore_screen import LoreScreen
 import numpy as np
-from ctypes import c_void_p
+import random
+import time
+import json
+
+class Obstacle:
+    def __init__(self, lane_x, z_pos):
+        self.x = lane_x
+        self.z = z_pos
+        self.size = 0.5
+
+    def update(self, speed):
+        self.z += speed
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(self.x, 0.0, self.z)
+        glScalef(self.size, self.size, self.size)
+        glColor3f(1.0, 0.0, 0.0)
+        glBegin(GL_QUADS)
+        for dx, dz in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+            glVertex3f(dx, 0.0, dz)
+        glEnd()
+        glPopMatrix()
 
 
 class Window:
     def __init__(self):
-
         if not glfw.init():
             raise Exception("❌ GLFW could not be initialized")
 
@@ -28,76 +49,104 @@ class Window:
             raise Exception("Failed to create GLFW window")
 
         glfw.make_context_current(self.window)
-
         glfw.set_window_size_callback(self.window, self._on_resize)
+        glfw.set_key_callback(self.window, self._on_key)
 
         self._update_metrics()
 
-        with open(shaders_path.VERTEX_BASIC, "r") as file:
-            vertex_source = file.read()
-        with open(shaders_path.FRAGMENT_BASIC, "r") as file:
-            fragment_source = file.read()
+        self.lanes = [-2.0, 0.0, 2.0]
+        self.player_lane = 1
+        self.obstacles = []
+        self.spawn_timer = 0.0
 
-        self.shader = Shader(vertex_source, fragment_source)
-        self.vao = self._create_triangle()
+        self.state = "lore"
+        self.lore_screen = None
+
+        glEnable(GL_DEPTH_TEST)
+
+    def show_lore(self, path, typing_speed=0.05, pause_between_blocks=2.5):
+        with open(path, "r", encoding="utf-8") as file:
+            blocks = json.load(file)
+        self.lore_screen = LoreScreen(self.window, blocks, typing_speed, pause_between_blocks)
+
 
     def run(self):
         while not glfw.window_should_close(self.window):
             glfw.poll_events()
 
-            # Efeito de transição de cor
-            time = glfw.get_time()
-            speed = 2.0
-            index = int(time // speed) % len(colors.COLOR_PALETTE)
-            next_index = (index + 1) % len(colors.COLOR_PALETTE)
-            blend = (time % speed) / speed
+            if self.state == "lore":
+                self.lore_screen.update()
+                self.lore_screen.draw()
+                if self.lore_screen.finished:
+                    self.state = "playing"
+            elif self.state == "playing":
+                glClearColor(0.1, 0.1, 0.1, 1.0)
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-            color_one = colors.COLOR_PALETTE[index]
-            color_two = colors.COLOR_PALETTE[next_index]
-            current_color = lerp_color(color_one, color_two, blend)
+                glMatrixMode(GL_PROJECTION)
+                glLoadIdentity()
+                gluPerspective(45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0)
 
-            glClearColor(*current_color)
-            glClear(GL_COLOR_BUFFER_BIT)
+                glMatrixMode(GL_MODELVIEW)
+                glLoadIdentity()
+                gluLookAt(0, 5, 5, 0, 0, -10, 0, 1, 0)
 
-            self.shader.use()
-            glBindVertexArray(self.vao)
-            glDrawArrays(GL_TRIANGLES, 0, 3)
+                self._spawn_obstacles()
+                self._update_obstacles()
+                self._draw_obstacles()
+                self._draw_player()
+                self._check_collisions()
 
             glfw.swap_buffers(self.window)
 
         glfw.terminate()
 
-    def _create_triangle(self):
-        """Cria um triângulo simples para renderização."""
-        vertices = np.array(
-            [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0],
-            dtype=np.float32,
-        )
+    def _spawn_obstacles(self):
+        self.spawn_timer += 0.01
+        if self.spawn_timer > 1.5:
+            lane = random.choice(self.lanes)
+            self.obstacles.append(Obstacle(lane, -20.0))
+            self.spawn_timer = 0.0
 
-        vao = glGenVertexArrays(1)
-        vbo = glGenBuffers(1)
+    def _update_obstacles(self):
+        for obs in self.obstacles:
+            obs.update(0.1)
 
-        glBindVertexArray(vao)
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
+    def _draw_obstacles(self):
+        for obs in self.obstacles:
+            obs.draw()
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * 4, c_void_p(0))
-        glEnableVertexAttribArray(0)
+    def _draw_player(self):
+        glPushMatrix()
+        glTranslatef(self.lanes[self.player_lane], 0.0, 0.0)
+        glScalef(0.5, 0.5, 0.5)
+        glColor3f(0.0, 1.0, 0.0)
+        glBegin(GL_QUADS)
+        for dx, dz in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+            glVertex3f(dx, 0.0, dz)
+        glEnd()
+        glPopMatrix()
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
+    def _check_collisions(self):
+        for obs in self.obstacles:
+            if abs(obs.z) < 1.0 and obs.x == self.lanes[self.player_lane]:
+                print("💥 COLISÃO!")
 
-        return vao
+    def _on_key(self, window, key, scancode, action, mods):
+        if action == glfw.PRESS:
+            if self.state == "playing":
+                if key == glfw.KEY_LEFT and self.player_lane > 0:
+                    self.player_lane -= 1
+                elif key == glfw.KEY_RIGHT and self.player_lane < 2:
+                    self.player_lane += 1
 
     def _update_metrics(self):
-        """Atualiza as métricas com base no framebuffer atual."""
         width, height = glfw.get_framebuffer_size(self.window)
         metrics.WINDOW_WIDTH = width
         metrics.WINDOW_HEIGHT = height
         glViewport(0, 0, width, height)
 
     def _on_resize(self, window, width, height):
-        """Callback de redimensionamento da janela."""
         metrics.WINDOW_WIDTH = width
         metrics.WINDOW_HEIGHT = height
         glViewport(0, 0, width, height)
