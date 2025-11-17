@@ -2,7 +2,7 @@ import glfw
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from src.constants import metrics
-from scene.lore_scene import LoreScene
+from src.scene.lore_scene import LoreScene
 from src.objects.objects import Obstacle
 import numpy as np
 import random
