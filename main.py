@@ -1,5 +1,4 @@
 from src.engine.window import Window
-from src.ui.lore_screen import LoreScreen
 
 if __name__ == "__main__":
     app = Window()

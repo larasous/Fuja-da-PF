@@ -2,37 +2,18 @@ import glfw
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from src.constants import metrics
-from src.ui.lore_screen import LoreScreen
+from src.scene.lore_scene import LoreScene
+from src.objects.objects import Obstacle
 import numpy as np
 import random
 import time
 import json
 
-class Obstacle:
-    def __init__(self, lane_x, z_pos):
-        self.x = lane_x
-        self.z = z_pos
-        self.size = 0.5
-
-    def update(self, speed):
-        self.z += speed
-
-    def draw(self):
-        glPushMatrix()
-        glTranslatef(self.x, 0.0, self.z)
-        glScalef(self.size, self.size, self.size)
-        glColor3f(1.0, 0.0, 0.0)
-        glBegin(GL_QUADS)
-        for dx, dz in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
-            glVertex3f(dx, 0.0, dz)
-        glEnd()
-        glPopMatrix()
-
 
 class Window:
     def __init__(self):
         if not glfw.init():
-            raise Exception("❌ GLFW could not be initialized")
+            raise Exception("GLFW could not be initialized")
 
         if metrics.WINDOW_MAXIMIZED:
             glfw.window_hint(glfw.MAXIMIZED, glfw.TRUE)
@@ -67,8 +48,9 @@ class Window:
     def show_lore(self, path, typing_speed=0.05, pause_between_blocks=2.5):
         with open(path, "r", encoding="utf-8") as file:
             blocks = json.load(file)
-        self.lore_screen = LoreScreen(self.window, blocks, typing_speed, pause_between_blocks)
-
+            self.lore_screen = LoreScene(
+                self.window, blocks, typing_speed, pause_between_blocks
+            )
 
     def run(self):
         while not glfw.window_should_close(self.window):
@@ -85,7 +67,9 @@ class Window:
 
                 glMatrixMode(GL_PROJECTION)
                 glLoadIdentity()
-                gluPerspective(45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0)
+                gluPerspective(
+                    45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0
+                )
 
                 glMatrixMode(GL_MODELVIEW)
                 glLoadIdentity()
