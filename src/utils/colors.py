@@ -1,6 +1,3 @@
-# src/utils/colors.py
-
-
 def hex_to_rgba(hex_color: str, alpha: float = 1.0) -> tuple:
     hex_color = hex_color.lstrip("#")
     if len(hex_color) != 6:
