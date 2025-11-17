@@ -23,8 +23,9 @@ class Object:
 
 
 class Obstacle(Object):
-    def __init__(self, model, lane_x, z_pos):
-        super().__init__(model, position=[lane_x, 0, z_pos])
+    def __init__(self, lane_x, z_pos):
+        self.x = lane_x
+        self.z = z_pos
         self.size = 0.5
 
     def update(self, speed):
