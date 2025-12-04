@@ -8,7 +8,8 @@ import numpy as np
 import random
 import time
 import json
-
+from src.ui.start_screen import StartScreen
+from src.engine.input import InputManager
 
 class Window:
     def __init__(self):
@@ -31,16 +32,20 @@ class Window:
 
         glfw.make_context_current(self.window)
         glfw.set_window_size_callback(self.window, self._on_resize)
-        glfw.set_key_callback(self.window, self._on_key)
+        self.input = InputManager()
+        self.input.register_callbacks(self.window)
 
         self._update_metrics()
+
+
+        self.start_screen = StartScreen(self.window, self.input)
+        self.state = "start"
 
         self.lanes = [-2.0, 0.0, 2.0]
         self.player_lane = 1
         self.obstacles = []
         self.spawn_timer = 0.0
 
-        self.state = "lore"
         self.lore_screen = None
 
         glEnable(GL_DEPTH_TEST)
@@ -54,13 +59,27 @@ class Window:
 
     def run(self):
         while not glfw.window_should_close(self.window):
+            # Processa eventos do GLFW
             glfw.poll_events()
 
-            if self.state == "lore":
+            # --- Tela inicial ---
+            if self.state == "start":
+                print("Estado: start")
+                self.start_screen.update()
+                self.start_screen.draw()
+                if self.start_screen.finished:
+                    # Quando ENTER for detectado
+                    self.show_lore("assets/lore/intro.json", typing_speed=0.05, pause_between_blocks=3.0)
+                    self.state = "lore"
+
+            # --- Tela de lore ---
+            elif self.state == "lore":
                 self.lore_screen.update()
                 self.lore_screen.draw()
                 if self.lore_screen.finished:
                     self.state = "playing"
+
+            # --- Jogo rodando ---
             elif self.state == "playing":
                 glClearColor(0.1, 0.1, 0.1, 1.0)
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -81,10 +100,12 @@ class Window:
                 self._draw_player()
                 self._check_collisions()
 
+            # ✅ Atualiza o InputManager só no final do frame
+            self.input.update()
             glfw.swap_buffers(self.window)
 
         glfw.terminate()
-
+    
     def _spawn_obstacles(self):
         self.spawn_timer += 0.01
         if self.spawn_timer > 1.5:
