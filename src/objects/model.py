@@ -3,12 +3,7 @@ from OpenGL.GL import *
 
 class Model:
     def __init__(self, path):
-        self.vertices_raw, self.texcoords_raw, self.normals_raw, self.faces = (
-            self._load_obj(path)
-        )
-        self.vertices, self.texcoords, self.normals = self._expand_faces(
-            self.vertices_raw, self.texcoords_raw, self.normals_raw, self.faces
-        )
+        self.vertices, self.texcoords, self.normals = self._load_obj(path)
         self.vao, self.vbo_vertices, self.vbo_texcoords, self.vbo_normals = (
             self._create_vao()
         )
@@ -34,7 +29,10 @@ class Model:
                     parts = line.strip().split()[1:]
                     faces.append(parts)
 
-        return vertices_raw, texcoords_raw, normals_raw, faces
+        vertices, texcoords, normals = self._expand_faces(
+            vertices_raw, texcoords_raw, normals_raw, faces
+        )
+        return vertices, texcoords, normals
 
     def _expand_faces(self, vertices_raw, texcoords_raw, normals_raw, faces):
         vertices = []
