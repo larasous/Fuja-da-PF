@@ -72,7 +72,7 @@ class Window:
                 glMatrixMode(GL_PROJECTION)
                 glLoadIdentity()
                 gluPerspective(
-                    45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0
+                    45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 1.0, 100.0
                 )
 
                 glMatrixMode(GL_MODELVIEW)
@@ -93,12 +93,13 @@ class Window:
         self.spawn_timer += 0.01
         if self.spawn_timer > 1.5:
             lane = random.choice(self.lanes)
-            self.obstacles.append(Obstacle(lane, -20.0))
-            self.spawn_timer = 0.0
+            self.obstacles.append(Obstacle(self.frenchFries, lane, -20.0, scale=3.5))
+            self.spawn_timer = 0.05
 
     def _update_obstacles(self):
         for obs in self.obstacles:
-            obs.update(0.1)
+            obs.update(0.01)
+        self.obstacles = [obs for obs in self.obstacles if obs.z < 0]
 
     def _draw_obstacles(self):
         for obs in self.obstacles:

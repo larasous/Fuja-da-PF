@@ -1,5 +1,6 @@
 import numpy as np
 from OpenGL.GL import *
+from src.objects.model import Model
 
 
 class Object:
@@ -22,22 +23,28 @@ class Object:
         self.model.draw()
 
 
-class Obstacle(Object):
-    def __init__(self, lane_x, z_pos):
-        self.x = lane_x
-        self.z = z_pos
-        self.size = 0.5
+class Obstacle:
+    def __init__(
+        self,
+        model: Model,
+        x: float,
+        z: float,
+        scale: float = 0.5,
+        color=(1.0, 0.0, 0.0),
+    ):
+        self.model = model
+        self.x = x
+        self.z = z
+        self.scale = scale
+        self.color = color
 
-    def update(self, speed):
+    def update(self, speed: float):
         self.z += speed
 
     def draw(self):
         glPushMatrix()
         glTranslatef(self.x, 0.0, self.z)
-        glScalef(self.size, self.size, self.size)
-        glColor3f(1.0, 0.0, 0.0)
-        glBegin(GL_QUADS)
-        for dx, dz in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
-            glVertex3f(dx, 0.0, dz)
-        glEnd()
+        glScalef(self.scale, self.scale, self.scale)
+        glColor3f(*self.color)
+        self.model.draw()
         glPopMatrix()

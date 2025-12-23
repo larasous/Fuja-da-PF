@@ -3,36 +3,67 @@ from OpenGL.GL import *
 
 class Model:
     def __init__(self, path):
-        self.vertices, self.texcoords, self.normals = self._load_obj(path)
-        self.vao = self._create_vao()
+        self.vertices_raw, self.texcoords_raw, self.normals_raw, self.faces = (
+            self._load_obj(path)
+        )
+        self.vertices, self.texcoords, self.normals = self._expand_faces(
+            self.vertices_raw, self.texcoords_raw, self.normals_raw, self.faces
+        )
+        self.vao, self.vbo_vertices, self.vbo_texcoords, self.vbo_normals = (
+            self._create_vao()
+        )
 
     def _load_obj(self, path: str):
-        # retorna listas de vértices SEM aplicar transformações
+        vertices_raw = []
+        texcoords_raw = []
+        normals_raw = []
+        faces = []
+
         with open(path, "r") as file:
-            line = file.readline()
-            vertices = []
-            texcoords = []
-            normals = []
-            faces = []
-            while line:
+            for line in file:
                 if line.startswith("v "):
                     parts = line.strip().split()[1:]
-                    vertices.extend([float(p) for p in parts])
+                    vertices_raw.append([float(p) for p in parts])
                 elif line.startswith("vt "):
                     parts = line.strip().split()[1:]
-                    texcoords.extend([float(p) for p in parts])
+                    texcoords_raw.append([float(p) for p in parts])
                 elif line.startswith("vn "):
                     parts = line.strip().split()[1:]
-                    normals.extend([float(p) for p in parts])
+                    normals_raw.append([float(p) for p in parts])
                 elif line.startswith("f "):
                     parts = line.strip().split()[1:]
-                    faces.extend(parts)
-                line = file.readline()
-                print(line)
-            return vertices, texcoords, normals
+                    faces.append(parts)
+
+        return vertices_raw, texcoords_raw, normals_raw, faces
+
+    def _expand_faces(self, vertices_raw, texcoords_raw, normals_raw, faces):
+        vertices = []
+        texcoords = []
+        normals = []
+
+        for face in faces:
+            # triangulação simples: se vier quad, divide em 2 triângulos
+            indices = [vert.split("/") for vert in face]
+            if len(indices) == 4:
+                tri_sets = [indices[:3], [indices[0], indices[2], indices[3]]]
+            else:
+                tri_sets = [indices]
+
+            for tri in tri_sets:
+                for vtn in tri:
+                    v = int(vtn[0]) if vtn[0] else 0
+                    t = int(vtn[1]) if len(vtn) > 1 and vtn[1] else 0
+                    n = int(vtn[2]) if len(vtn) > 2 and vtn[2] else 0
+
+                    vertices.extend(vertices_raw[v - 1])
+                    if t:
+                        texcoords.extend(texcoords_raw[t - 1])
+                    if n:
+                        normals.extend(normals_raw[n - 1])
+
+        return vertices, texcoords, normals
 
     def _create_vao(self):
-        # cria buffers
         vao = glGenVertexArrays(1)
         glBindVertexArray(vao)
 
@@ -61,11 +92,14 @@ class Model:
         glBufferData(GL_ARRAY_BUFFER, len(normal_data) * 4, normal_data, GL_STATIC_DRAW)
         glEnableVertexAttribArray(2)
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, None)
+
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
-        return vao
+        return vao, vbo_vertices, vbo_texcoords, vbo_normals
 
     def draw(self):
         glBindVertexArray(self.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.vertex_count)
+        # cada face foi expandida em triângulos → basta usar DrawArrays
+        glDrawArrays(GL_TRIANGLES, 0, len(self.vertices) // 3)
+        glBindVertexArray(0)
