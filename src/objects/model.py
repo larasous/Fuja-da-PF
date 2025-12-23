@@ -100,6 +100,5 @@ class Model:
 
     def draw(self):
         glBindVertexArray(self.vao)
-        # cada face foi expandida em triângulos → basta usar DrawArrays
         glDrawArrays(GL_TRIANGLES, 0, len(self.vertices) // 3)
         glBindVertexArray(0)
