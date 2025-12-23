@@ -1,9 +1,10 @@
 import glfw
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from src.constants import metrics
+from src.constants import metrics, objects_path
 from src.scene.lore_scene import LoreScene
 from src.objects.objects import Obstacle
+from src.objects.model import Model
 import numpy as np
 import random
 import time
@@ -33,6 +34,8 @@ class Window:
         glfw.set_window_size_callback(self.window, self._on_resize)
         glfw.set_key_callback(self.window, self._on_key)
 
+        self.frenchFries = Model(objects_path.FRENCH_FRIES_PATH)
+
         self._update_metrics()
 
         self.lanes = [-2.0, 0.0, 2.0]
@@ -55,6 +58,7 @@ class Window:
     def run(self):
         while not glfw.window_should_close(self.window):
             glfw.poll_events()
+            self.state = "playing"
 
             if self.state == "lore":
                 self.lore_screen.update()
@@ -114,7 +118,8 @@ class Window:
     def _check_collisions(self):
         for obs in self.obstacles:
             if abs(obs.z) < 1.0 and obs.x == self.lanes[self.player_lane]:
-                print("💥 COLISÃO!")
+                # print("💥 COLISÃO!")
+                pass
 
     def _on_key(self, window, key, scancode, action, mods):
         if action == glfw.PRESS:
