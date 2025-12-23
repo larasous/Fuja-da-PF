@@ -1,9 +1,10 @@
 import glfw
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from src.constants import metrics
+from src.constants import metrics, objects_path
 from src.scene.lore_scene import LoreScene
 from src.objects.objects import Obstacle
+from src.objects.model import Model
 import numpy as np
 import random
 import time
@@ -35,6 +36,8 @@ class Window:
         self.input = InputManager()
         self.input.register_callbacks(self.window)
 
+        self.frenchFries = Model(objects_path.FRENCH_FRIES_PATH)
+
         self._update_metrics()
 
 
@@ -61,6 +64,7 @@ class Window:
         while not glfw.window_should_close(self.window):
             # Processa eventos do GLFW
             glfw.poll_events()
+            self.state = "playing"
 
             # --- Tela inicial ---
             if self.state == "start":
@@ -87,7 +91,7 @@ class Window:
                 glMatrixMode(GL_PROJECTION)
                 glLoadIdentity()
                 gluPerspective(
-                    45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0
+                    45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 1.0, 100.0
                 )
 
                 glMatrixMode(GL_MODELVIEW)
@@ -110,12 +114,13 @@ class Window:
         self.spawn_timer += 0.01
         if self.spawn_timer > 1.5:
             lane = random.choice(self.lanes)
-            self.obstacles.append(Obstacle(lane, -20.0))
-            self.spawn_timer = 0.0
+            self.obstacles.append(Obstacle(self.frenchFries, lane, -20.0, scale=3.5))
+            self.spawn_timer = 0.05
 
     def _update_obstacles(self):
         for obs in self.obstacles:
-            obs.update(0.1)
+            obs.update(0.01)
+        self.obstacles = [obs for obs in self.obstacles if obs.z < 0]
 
     def _draw_obstacles(self):
         for obs in self.obstacles:
@@ -135,7 +140,8 @@ class Window:
     def _check_collisions(self):
         for obs in self.obstacles:
             if abs(obs.z) < 1.0 and obs.x == self.lanes[self.player_lane]:
-                print("💥 COLISÃO!")
+                # print("💥 COLISÃO!")
+                pass
 
     def _on_key(self, window, key, scancode, action, mods):
         if action == glfw.PRESS:
