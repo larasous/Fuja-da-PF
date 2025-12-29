@@ -11,7 +11,7 @@ import time
 import json
 from src.ui.start_screen import StartScreen
 from src.engine.input import InputManager
-
+from src.objects.player import Player
 class Window:
     def __init__(self):
         if not glfw.init():
@@ -34,18 +34,18 @@ class Window:
         glfw.make_context_current(self.window)
         glfw.set_window_size_callback(self.window, self._on_resize)
         self.input = InputManager()
-        self.input.register_callbacks(self.window)
+        glfw.set_key_callback(self.window, self._on_key)
 
         self.frenchFries = Model(objects_path.FRENCH_FRIES_PATH)
 
         self._update_metrics()
 
-
+        self.game_over = False
         self.start_screen = StartScreen(self.window, self.input)
         self.state = "start"
 
         self.lanes = [-2.0, 0.0, 2.0]
-        self.player_lane = 1
+        self.player = Player(self.lanes)
         self.obstacles = []
         self.spawn_timer = 0.0
 
@@ -98,10 +98,13 @@ class Window:
                 glLoadIdentity()
                 gluLookAt(0, 5, 5, 0, 0, -10, 0, 1, 0)
 
-                self._spawn_obstacles()
-                self._update_obstacles()
+                if not self.game_over:
+                    self._spawn_obstacles()
+                    self._update_obstacles()
+
+                
                 self._draw_obstacles()
-                self._draw_player()
+                self.player.draw()
                 self._check_collisions()
 
             # ✅ Atualiza o InputManager só no final do frame
@@ -119,7 +122,7 @@ class Window:
 
     def _update_obstacles(self):
         for obs in self.obstacles:
-            obs.update(0.01)
+            obs.update(0.02)
         self.obstacles = [obs for obs in self.obstacles if obs.z < 0]
 
     def _draw_obstacles(self):
@@ -138,18 +141,20 @@ class Window:
         glPopMatrix()
 
     def _check_collisions(self):
-        for obs in self.obstacles:
-            if abs(obs.z) < 1.0 and obs.x == self.lanes[self.player_lane]:
-                # print("💥 COLISÃO!")
-                pass
+            player_x = self.lanes[self.player.current_lane]
+            for obs in self.obstacles:
+                if abs(obs.z) < 0.1 and abs(obs.x - player_x) < 0.1:
+                    print("💥 COLISÃO!")
+                    self.game_over = True
+
 
     def _on_key(self, window, key, scancode, action, mods):
         if action == glfw.PRESS:
             if self.state == "playing":
-                if key == glfw.KEY_LEFT and self.player_lane > 0:
-                    self.player_lane -= 1
-                elif key == glfw.KEY_RIGHT and self.player_lane < 2:
-                    self.player_lane += 1
+                if key == glfw.KEY_LEFT:
+                    self.player.move_left()
+                elif key == glfw.KEY_RIGHT:
+                    self.player.move_right()
 
     def _update_metrics(self):
         width, height = glfw.get_framebuffer_size(self.window)

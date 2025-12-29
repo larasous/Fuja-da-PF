@@ -38,7 +38,12 @@ class Obstacle:
         self.scale = scale
         self.color = color
 
+        # bounding box aproximada
+        self.width = 2.0 * self.scale
+        self.depth = 2.0 * self.scale
+
     def update(self, speed: float):
+        # move em direção ao player (z mais próximo de -3)
         self.z += speed
 
     def draw(self):
