@@ -9,9 +9,7 @@ class Player:
 
         # atributos visuais
         self.color = (0.0, 1.0, 0.0)  # verde
-        self.radius = 0.2             # tamanho da esfera
-        self.width = 1.0
-        self.depth = 1.0
+        self.radius = 0.1             # tamanho da esfera
         self.z = -3.0  # posição fixa em z
 
     def move_left(self):

@@ -143,10 +143,9 @@ class Window:
     def _check_collisions(self):
             player_x = self.lanes[self.player.current_lane]
             for obs in self.obstacles:
-                if abs(obs.z) < 0.1 and abs(obs.x - player_x) < 0.1:
-                    print("💥 COLISÃO!")
+                if abs(obs.z + 3.0) < 0.01 and abs(obs.x - player_x) < 0.01:
                     self.game_over = True
-
+                    print("💥 COLISÃO!")
 
     def _on_key(self, window, key, scancode, action, mods):
         if action == glfw.PRESS:
