@@ -12,6 +12,8 @@ import json
 from src.ui.start_screen import StartScreen
 from src.engine.input import InputManager
 from src.objects.player import Player
+from src.engine.camera import CameraManager
+
 class Window:
     def __init__(self):
         if not glfw.init():
@@ -31,6 +33,7 @@ class Window:
             glfw.terminate()
             raise Exception("Failed to create GLFW window")
 
+        self.camera = CameraManager()
         glfw.make_context_current(self.window)
         glfw.set_window_size_callback(self.window, self._on_resize)
         self.input = InputManager()
@@ -94,9 +97,7 @@ class Window:
                     45, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 1.0, 100.0
                 )
 
-                glMatrixMode(GL_MODELVIEW)
-                glLoadIdentity()
-                gluLookAt(0, 5, 5, 0, 0, -10, 0, 1, 0)
+                self.camera.apply(self.player.x, 0.0, self.player.z)
 
                 if not self.game_over:
                     self._spawn_obstacles()
@@ -104,10 +105,10 @@ class Window:
 
                 
                 self._draw_obstacles()
+                self.player.update()
                 self.player.draw()
                 self._check_collisions()
 
-            # ✅ Atualiza o InputManager só no final do frame
             self.input.update()
             glfw.swap_buffers(self.window)
 
@@ -154,6 +155,12 @@ class Window:
                     self.player.move_left()
                 elif key == glfw.KEY_RIGHT:
                     self.player.move_right()
+                elif key == glfw.KEY_1:
+                    self.camera.set_mode("first_person")
+                elif key == glfw.KEY_3:
+                    self.camera.set_mode("third_person")
+                elif key == glfw.KEY_2:
+                    self.camera.set_mode("top_down")
 
     def _update_metrics(self):
         width, height = glfw.get_framebuffer_size(self.window)
