@@ -193,35 +193,6 @@ class Window:
             obs.update(0.01)
         self.obstacles = [obs for obs in self.obstacles if obs.position[2] < 0]
 
-    def _draw_obstacles(self):
-        self.object_shader.use()
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.object_shader.program, "projection"),
-            1,
-            GL_FALSE,
-            self.projection_matrix.astype(np.float32),
-        )
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.object_shader.program, "view"),
-            1,
-            GL_FALSE,
-            self.view_matrix.astype(np.float32),
-        )
-
-        for obs in self.obstacles:
-            obs.render(self.object_shader)
-
-    def _draw_player(self):
-        glPushMatrix()
-        glTranslatef(self.lanes[self.player_lane], 0.0, 0.0)
-        glScalef(0.5, 0.5, 0.5)
-        glColor3f(0.0, 1.0, 0.0)
-        glBegin(GL_QUADS)
-        for dx, dz in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
-            glVertex3f(dx, 0.0, dz)
-        glEnd()
-        glPopMatrix()
-
     def _check_collisions(self):
         for obs in self.obstacles:
             if (
