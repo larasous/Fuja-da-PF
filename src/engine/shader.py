@@ -1,3 +1,4 @@
+import numpy as np
 from OpenGL.GL import *
 
 
@@ -24,6 +25,14 @@ class Shader:
             raise Exception(f"Shader compilation failed: {error}")
 
         return shader
+
+    def set_mat4(self, name, mat):
+        loc = glGetUniformLocation(self.program, name)
+        glUniformMatrix4fv(loc, 1, GL_FALSE, mat.astype(np.float32))
+
+    def set_vec3(self, name, vec):
+        loc = glGetUniformLocation(self.program, name)
+        glUniform3fv(loc, 1, np.array(vec, dtype=np.float32))
 
     def use(self):
         glUseProgram(self.program)

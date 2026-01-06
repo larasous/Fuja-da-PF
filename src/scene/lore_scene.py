@@ -1,6 +1,6 @@
 import glfw
 from src.ui.imgui_layer import ImGuiLayer
-from src.ui.background import LoreBackground
+from src.ui.lore_background import LoreBackground
 from src.ui.typing_box import TypingBox
 
 
