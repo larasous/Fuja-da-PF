@@ -151,8 +151,8 @@ class Skybox:
         ]
 
         for i, face in enumerate(faces):
-            img = Image.open(face).convert("RGB")
-            img_data = np.array(img, dtype=np.uint8)
+            img = Image.open(face).convert("RGB").resize((1024, 1024))
+            img_data = img.tobytes()
             glTexImage2D(
                 targets[i],
                 0,
