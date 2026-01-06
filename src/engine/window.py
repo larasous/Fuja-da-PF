@@ -221,7 +221,7 @@ class Window:
         self.spawn_timer += 0.01
         if self.spawn_timer > 1.5:
             lane = random.choice(self.lanes)
-            self.obstacles.append(Obstacle(self.frenchFries, lane, -20.0, scale=3.5))
+            self.obstacles.append(Obstacle(self.frenchFries, lane, -20.0, scale=2.5))
             self.spawn_timer = 0.05
 
     def _update_obstacles(self):

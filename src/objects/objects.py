@@ -12,11 +12,12 @@ class Object:
         self.scale = np.array(scale, dtype=np.float32)
 
     def get_model_matrix(self):
-        translation = Matrix44.from_translation(self.position)
-        rotation = Matrix44.identity()
         scaling = Matrix44.from_scale(self.scale)
-        model_matrix = translation @ rotation @ scaling
+        rotation = Matrix44.identity()  # ou sua rotação real
+        translation = Matrix44.from_translation(self.position)
+        model_matrix = scaling @ rotation @ translation
         return model_matrix
+
 
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
