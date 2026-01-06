@@ -18,6 +18,7 @@ import json
 from src.objects.player import Player
 from src.engine.camera import CameraManager
 
+
 class Window:
     def __init__(self):
         if not glfw.init():
@@ -58,18 +59,20 @@ class Window:
 
         self.skybox = Skybox(
             [
-                textures_path.SKYBOX_TEXTURES["PX"],
-                textures_path.SKYBOX_TEXTURES["NX"],
+                textures_path.SKYBOX_TEXTURES["NZ"],
+                textures_path.SKYBOX_TEXTURES["PZ"],
                 textures_path.SKYBOX_TEXTURES["PY"],
                 textures_path.SKYBOX_TEXTURES["NY"],
-                textures_path.SKYBOX_TEXTURES["PZ"],
-                textures_path.SKYBOX_TEXTURES["NZ"],
+                textures_path.SKYBOX_TEXTURES["NX"],
+                textures_path.SKYBOX_TEXTURES["PX"],
             ]
         )
 
         self.camera = CameraManager()
         self.player_model = Model(objects_path.CAKE_PATH)
-        self.player = Player(self.player_model, position=[0, 0, -0.5], scale=[2.0, 2.0, 2.0])
+        self.player = Player(
+            self.player_model, position=[0, 0, -0.5], scale=[2.0, 2.0, 2.0]
+        )
 
         self.input = InputManager()
         self.input.register_callbacks(self.window)
@@ -130,42 +133,24 @@ class Window:
                 glClearColor(0.1, 0.1, 0.1, 1.0)
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+                # --- Atualiza câmera ---
+                self.camera.update(
+                    self.player.position[0],
+                    self.player.position[1],
+                    self.player.position[2],
+                )
+                view_matrix = self.camera.get_view_matrix()
+
                 # MATRIZES
                 projection_matrix = Matrix44.perspective_projection(
                     45.0, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0
                 )
 
-                # --- Atualiza câmera ---
-                self.camera.update(
-                    self.player.position[0],
-                    self.player.position[1],
-                    self.player.position[2]
-                )
-                view_matrix = self.camera.get_view_matrix()
-
-
-    		# --- Player ---
-                self.player_shader.use()
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.player_shader.program, "projection"),
-                    1, GL_FALSE,
-                    projection_matrix.astype(np.float32)
-                )
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.player_shader.program, "view"),
-                    1, GL_FALSE,
-                    view_matrix.astype(np.float32)
-                )
-
-                # desenhar player (bolo)
-                self.player.update(0.01) 
-                self.player.render(self.player_shader)
-
-
                 view_matrix_skybox = view_matrix.copy()
                 view_matrix_skybox[3, :3] = 0.0
 
                 glDepthFunc(GL_LEQUAL)
+                glDepthMask(GL_FALSE)
                 self.skybox_shader.use()
                 glUniformMatrix4fv(
                     glGetUniformLocation(self.skybox_shader.program, "projection"),
@@ -184,6 +169,26 @@ class Window:
                 )
                 self.skybox.draw(self.skybox_shader.program)
                 glDepthFunc(GL_LESS)
+                glDepthMask(GL_TRUE)
+
+                # --- Player ---
+                self.player_shader.use()
+                glUniformMatrix4fv(
+                    glGetUniformLocation(self.player_shader.program, "projection"),
+                    1,
+                    GL_FALSE,
+                    projection_matrix.astype(np.float32),
+                )
+                glUniformMatrix4fv(
+                    glGetUniformLocation(self.player_shader.program, "view"),
+                    1,
+                    GL_FALSE,
+                    view_matrix.astype(np.float32),
+                )
+
+                # desenhar player (bolo)
+                self.player.update(0.01)
+                self.player.render(self.player_shader)
 
                 # --- Objetos ---
                 self.french_fries_shader.use()
