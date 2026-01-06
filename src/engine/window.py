@@ -15,7 +15,8 @@ import numpy as np
 import random
 import time
 import json
-
+from src.engine.camera import CameraManager
+from src.objects.player import Player
 
 class Window:
     def __init__(self):
@@ -45,7 +46,12 @@ class Window:
         french_fries_vertex = read_shader_file(shaders_path.VERTEX_FRENCH_FRIES)
         french_fries_fragment = read_shader_file(shaders_path.FRAGMENT_FRENCH_FRIES)
 
+        player_vertex = read_shader_file(shaders_path.VERTEX_PLAYER)
+        player_fragment = read_shader_file(shaders_path.FRAGMENT_PLAYER)
+
         self.french_fries_shader = Shader(french_fries_vertex, french_fries_fragment)
+
+        self.player_shader = Shader(player_vertex, player_fragment)
 
         self.skybox_shader = Shader(skybox_vertex, skybox_fragment)
 
@@ -60,8 +66,13 @@ class Window:
             ]
         )
 
+        self.camera = CameraManager()
+        self.player_model = Model(objects_path.CAKE_PATH)
+        self.player = Player(self.player_model, position=[0, 0, -0.5], scale=[2.0, 2.0, 2.0])
+
         self.input = InputManager()
         self.input.register_callbacks(self.window)
+        glfw.set_key_callback(self.window, self._on_key)
 
         self.frenchFries = Model(objects_path.FRENCH_FRIES_PATH)
 
@@ -123,7 +134,32 @@ class Window:
                     45.0, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0
                 )
 
-                view_matrix = Matrix44.look_at([0, 5, 5], [0, 0, -10], [0, 1, 0])
+                # --- Atualiza câmera ---
+                self.camera.update(
+                    self.player.position[0],
+                    self.player.position[1],
+                    self.player.position[2]
+                )
+                view_matrix = self.camera.get_view_matrix()
+
+
+    		# --- Player ---
+                self.player_shader.use()
+                glUniformMatrix4fv(
+                    glGetUniformLocation(self.player_shader.program, "projection"),
+                    1, GL_FALSE,
+                    projection_matrix.astype(np.float32)
+                )
+                glUniformMatrix4fv(
+                    glGetUniformLocation(self.player_shader.program, "view"),
+                    1, GL_FALSE,
+                    view_matrix.astype(np.float32)
+                )
+
+                # desenhar player (bolo)
+                self.player.update(0.01) 
+                self.player.render(self.player_shader)
+
 
                 view_matrix_skybox = view_matrix.copy()
                 view_matrix_skybox[3, :3] = 0.0
@@ -203,12 +239,20 @@ class Window:
                 pass
 
     def _on_key(self, window, key, scancode, action, mods):
-        if action == glfw.PRESS:
-            if self.state == "playing":
-                if key == glfw.KEY_LEFT and self.player_lane > 0:
-                    self.player_lane -= 1
-                elif key == glfw.KEY_RIGHT and self.player_lane < 2:
-                    self.player_lane += 1
+        if action == glfw.PRESS and self.state == "playing":
+            # movimento lateral
+            if key == glfw.KEY_LEFT:
+                self.player.move_left(self.lanes)
+            elif key == glfw.KEY_RIGHT:
+                self.player.move_right(self.lanes)
+
+            # troca de câmera
+            elif key == glfw.KEY_1:
+                self.camera.set_mode("first_person")
+            elif key == glfw.KEY_2:
+                self.camera.set_mode("third_person")
+            elif key == glfw.KEY_3:
+                self.camera.set_mode("top_down")
 
     def _update_metrics(self):
         width, height = glfw.get_framebuffer_size(self.window)
