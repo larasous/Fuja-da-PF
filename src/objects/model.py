@@ -96,7 +96,7 @@ class Model:
 
         return vao, vbo_vertices, vbo_texcoords, vbo_normals
 
-    def draw(self):
+    def render(self):
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, len(self.vertices) // 3)
         glBindVertexArray(0)

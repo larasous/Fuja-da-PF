@@ -70,9 +70,7 @@ class Window:
 
         self.camera = CameraManager()
         self.player_model = Model(objects_path.CAKE_PATH)
-        self.player = Player(
-            self.player_model, position=[0, 0, -0.5], scale=[2.0, 2.0, 2.0]
-        )
+        self.player = Player(self.player_model, scale=[2.0, 2.0, 2.0])
 
         self.input = InputManager()
         self.input.register_callbacks(self.window)
@@ -189,6 +187,7 @@ class Window:
                 # desenhar player (bolo)
                 self.player.update(0.01)
                 self.player.render(self.player_shader)
+                # print("Player position:", self.player.position)
 
                 # --- Objetos ---
                 self.french_fries_shader.use()
@@ -227,13 +226,22 @@ class Window:
         self.spawn_timer += 0.01
         if self.spawn_timer > 1.5:
             lane = random.choice(self.lanes)
-            self.obstacles.append(Obstacle(self.frenchFries, lane, -20.0, scale=2.5))
+            # nasce na origem
+            obs = Obstacle(self.frenchFries, scale=[2.5, 2.5, 2.5])
+            print("Obstacle created at:", obs.position)  # ← log inicial
+
+            # aplica transformação depois
+            obs.set_transform(translation=[lane, 0.0, -20.0], scale=[2.5, 2.5, 2.5])
+            print("Obstacle after transform:", obs.position)  # ← log após deslocamento
+
+            self.obstacles.append(obs)
             self.spawn_timer = 0.05
 
     def _update_obstacles(self):
         for obs in self.obstacles:
             obs.update(0.01)
-        self.obstacles = [obs for obs in self.obstacles if obs.position[2] < 0]
+        # mantém apenas os obstáculos que ainda não passaram do player
+        self.obstacles = [obs for obs in self.obstacles if obs.position[2] < 2.0]
 
     def _check_collisions(self):
         for obs in self.obstacles:

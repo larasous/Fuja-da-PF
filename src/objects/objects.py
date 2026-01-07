@@ -13,42 +13,50 @@ class Object:
 
     def get_model_matrix(self):
         scaling = Matrix44.from_scale(self.scale)
-        rotation = Matrix44.identity()  # ou sua rotação real
+        rotation = Matrix44.identity()
+        if self.rotation[0] != 0:
+            rotation = Matrix44.from_x_rotation(self.rotation[0]) @ rotation
+        if self.rotation[1] != 0:
+            rotation = Matrix44.from_y_rotation(self.rotation[1]) @ rotation
+        if self.rotation[2] != 0:
+            rotation = Matrix44.from_z_rotation(self.rotation[2]) @ rotation
         translation = Matrix44.from_translation(self.position)
+
         model_matrix = scaling @ rotation @ translation
         return model_matrix
 
+    def set_transform(self, translation=None, scale=None, rotation=None):
+        if translation is not None:
+            self.position = np.array(translation, dtype=np.float32)
+        if scale is not None:
+            self.scale = np.array(scale, dtype=np.float32)
+        if rotation is not None:
+            self.rotation = np.array(rotation, dtype=np.float32)
 
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
-        self.model.draw()
+        self.model.render()
 
 
 class Obstacle(Object):
-    def __init__(
-        self,
-        model: Model,
-        x: float,
-        z: float,
-        scale: float = 0.5,
-        color=(1.0, 0.0, 0.0),
-    ):
-        super().__init__(
-            model=model,
-            position=[x, 0.0, z],
-            rotation=[0.0, 0.0, 0.0],
-            scale=[scale, scale, scale],
-        )
+    def __init__(self, model, scale=[1.0, 1.0, 1.0], color=[1.0, 1.0, 1.0]):
+        # sempre nasce na origem
+        super().__init__(model, scale=scale)
+        self.speed = 1.0
         self.color = np.array(color, dtype=np.float32)
 
-        # bounding box aproximada
-        self.width = 2.0 * self.scale
-        self.depth = 2.0 * self.scale
+    def set_lane_and_depth(self, lane, depth):
+        """
+        Aplica a transformação para deslocar o obstáculo
+        até a pista (lane) e profundidade (depth).
+        """
+        self.set_transform(translation=[lane, 0.0, depth], scale=self.scale)
 
-    def update(self, speed: float):
-        self.position[2] += speed
+    def update(self, delta_time):
+        # movimento no eixo Z (vem em direção ao player)
+        self.position[2] += self.speed * delta_time
 
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
         shader.set_vec3("color", self.color)
-        self.model.draw()
+        self.model.render()
