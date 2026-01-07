@@ -42,7 +42,7 @@ class Obstacle(Object):
     def __init__(self, model, scale=[1.0, 1.0, 1.0], color=[1.0, 1.0, 1.0]):
         # sempre nasce na origem
         super().__init__(model, scale=scale)
-        self.speed = 1.0
+        self.speed = 3.0
         self.color = np.array(color, dtype=np.float32)
 
     def set_lane_and_depth(self, lane, depth):
