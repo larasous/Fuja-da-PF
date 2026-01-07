@@ -4,13 +4,15 @@ from src.objects.objects import Object
 
 
 class Player(Object):
-    def __init__(self, model, position=[0,0,0], rotation=[0,0,0], scale=[1,1,1]):
-        super().__init__(model, position, rotation, scale)
+    def __init__(self, model, scale=[1, 1, 1], color=[0.0, 1.0, 0.0]):
+        # sempre nasce na origem
+        super().__init__(
+            model, position=[0.0, 0.0, 0.0], rotation=[0, 0, 0], scale=scale
+        )
         self.current_lane = 1
-        self.target_x = position[0]   # posição alvo no eixo X
-        self.speed = 3.5              # velocidade de transição
-        self.color = np.array([0.0, 1.0, 0.0], dtype=np.float32)
-
+        self.target_x = 0.0
+        self.speed = 3.5  # velocidade de transição lateral
+        self.color = np.array(color, dtype=np.float32)
 
     def move_left(self, lanes):
         if self.current_lane > 0:
@@ -21,7 +23,6 @@ class Player(Object):
         if self.current_lane < len(lanes) - 1:
             self.current_lane += 1
             self.target_x = lanes[self.current_lane]
-
 
     def update(self, delta_time):
         # movimento suave no eixo X
@@ -36,4 +37,4 @@ class Player(Object):
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
         shader.set_vec3("color", self.color)
-        self.model.draw()
+        self.model.render()
