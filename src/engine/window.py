@@ -17,6 +17,7 @@ import time
 import json
 from src.objects.player import Player
 from src.engine.camera import CameraManager
+from src.ui.hud import HUD
 
 
 class Window:
@@ -51,6 +52,14 @@ class Window:
         player_vertex = read_shader_file(shaders_path.VERTEX_PLAYER)
         player_fragment = read_shader_file(shaders_path.FRAGMENT_PLAYER)
 
+        text_vert = read_shader_file(shaders_path.VERTEX_HUD)
+        text_frag = read_shader_file(shaders_path.FRAGMENT_HUD)
+        
+        self.hud_text_shader = Shader(text_vert, text_frag).program
+
+        self.hud = HUD(self.hud_text_shader)
+
+
         self.french_fries_shader = Shader(french_fries_vertex, french_fries_fragment)
 
         self.player_shader = Shader(player_vertex, player_fragment)
@@ -67,6 +76,9 @@ class Window:
                 textures_path.SKYBOX_TEXTURES["PX"],
             ]
         )
+
+        self.last_time = time.time()
+        self.player_speed = 3.0
 
         self.camera = CameraManager()
         self.player_model = Model(objects_path.CAKE_PATH)
@@ -128,6 +140,12 @@ class Window:
 
             # --- Jogo rodando ---
             elif self.state == "playing":
+
+                now = time.time()
+                delta_time = now - self.last_time
+                self.last_time = now
+                self.hud.start_timer()
+
                 glClearColor(0.1, 0.1, 0.1, 1.0)
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -214,6 +232,11 @@ class Window:
 
                 # desenhar player (quando migrar para Object)
                 # self.player.render(self.french_fries_shader)
+
+                self.hud.update_time(delta_time)
+                self.hud.update_distance(self.player_speed * delta_time)
+                self.hud.draw(metrics.WINDOW_WIDTH, metrics.WINDOW_HEIGHT)
+
 
                 self._check_collisions()
 
