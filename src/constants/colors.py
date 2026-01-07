@@ -5,8 +5,8 @@ HEX_PALETTE = [
     "#34568B",  # Blue
     "#FF6F61",  # Coral
     "#6B5B95",  # Purple
-    "#88B04B",  # Green
-    "#F7CAC9",  # Pink
+    "#2EC31B",  # Green
+    "#0D18F6",  # Blue bright
     "#92A8D1",  # Soft blue
     "#955251",  # Burgundy
     "#B565A7",  # Lavender

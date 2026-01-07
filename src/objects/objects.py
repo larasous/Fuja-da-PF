@@ -1,7 +1,6 @@
 import numpy as np
 from OpenGL.GL import *
 from pyrr import Matrix44
-from src.objects.model import Model
 
 
 class Object:
