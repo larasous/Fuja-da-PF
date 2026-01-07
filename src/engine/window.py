@@ -2,6 +2,7 @@ import glfw
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from pyrr import Matrix44
+from src.objects.collectible import Collectible
 from src.constants import metrics, objects_path, textures_path, shaders_path
 from src.utils.shaders import read_shader_file
 from src.engine.shader import Shader
@@ -54,11 +55,15 @@ class Window:
 
         text_vert = read_shader_file(shaders_path.VERTEX_HUD)
         text_frag = read_shader_file(shaders_path.FRAGMENT_HUD)
-        
+
+        coin_vert = read_shader_file(shaders_path.VERTEX_COIN)
+        coin_frag = read_shader_file(shaders_path.FRAGMENT_COIN)
+
+        self.coin_shader = Shader(coin_vert, coin_frag)
+
         self.hud_text_shader = Shader(text_vert, text_frag).program
 
         self.hud = HUD(self.hud_text_shader)
-
 
         self.french_fries_shader = Shader(french_fries_vertex, french_fries_fragment)
 
@@ -101,6 +106,13 @@ class Window:
         self.spawn_timer = 0.0
 
         self.lore_screen = None
+
+        self.collectibles = []
+        self.collectible_timer = 0.0
+        self.collectible_frequency = 1.0
+        self.collectible_batch = 1
+        
+        self.coinModel = Model(objects_path.COIN_PATH)
 
         glEnable(GL_DEPTH_TEST)
 
@@ -230,15 +242,45 @@ class Window:
                 for obs in self.obstacles:
                     obs.render(self.french_fries_shader)
 
-                # desenhar player (quando migrar para Object)
-                # self.player.render(self.french_fries_shader)
+                #collectibles
+                self.coin_shader.use()
+                glUniformMatrix4fv(
+                    glGetUniformLocation(self.coin_shader.program, "projection"),
+                    1,
+                    GL_FALSE,
+                    projection_matrix.astype(np.float32),
+                )
+
+                glUniformMatrix4fv(
+                    glGetUniformLocation(self.coin_shader.program, "view"),
+                    1,
+                    GL_FALSE,
+                    view_matrix.astype(np.float32),
+                )
+
+                self._spawn_collectibles()
+                self._update_collectibles()
+                for coin in self.collectibles:
+                    coin.render(self.coin_shader)
+
 
                 self.hud.update_time(delta_time)
                 self.hud.update_distance(self.player_speed * delta_time)
                 self.hud.draw(metrics.WINDOW_WIDTH, metrics.WINDOW_HEIGHT)
 
+                for obs in self.obstacles:
+                    if self.check_collision(self.player, obs, threshold=0.8):
+                        print("Colisão com obstáculo!")
+                        #self.game_over()   # quando tiver pronto
+                        break
 
-                self._check_collisions()
+                for coin in self.collectibles:
+                    if self.check_collision(self.player, coin, threshold=0.5):
+                        coin.collected = True
+                        self.hud.update_coins(1)
+                        print("Moeda coletada! Total:", self.hud.coin_count)
+
+                self.collectibles = [c for c in self.collectibles if not c.collected]
 
             self.input.update()
             glfw.swap_buffers(self.window)
@@ -266,14 +308,32 @@ class Window:
         # mantém apenas os obstáculos que ainda não passaram do player
         self.obstacles = [obs for obs in self.obstacles if obs.position[2] < 2.0]
 
-    def _check_collisions(self):
-        for obs in self.obstacles:
-            if (
-                abs(obs.position[2]) < 1.0
-                and obs.position[0] == self.lanes[self.player_lane]
-            ):
-                # print("💥 COLISÃO!")
-                pass
+    def _spawn_collectibles(self):
+        self.collectible_timer += 0.01
+        if self.collectible_timer > self.collectible_frequency:
+            lane = random.choice(self.lanes)
+
+            if self.obstacles and self.obstacles[-1].position[0] == lane:
+                lanes_available = [l for l in self.lanes if l != lane]
+                lane = random.choice(lanes_available)
+
+            for i in range(self.collectible_batch):
+                z_offset = -20.0 - i * 2.0
+                coin_y = 0.0 
+                coin = Collectible(self.coinModel, scale=[1.0, 1.0, 1.0], color=[1.0, 0.84, 0.0])
+                coin.set_transform(translation=[lane, coin_y, z_offset], scale=[1.0, 1.0, 1.0])
+                self.collectibles.append(coin)
+
+            self.collectible_timer = 0.0
+
+    def _update_collectibles(self):
+        for coin in self.collectibles:
+            coin.update(0.01)
+        self.collectibles = [coin for coin in self.collectibles if coin.position[2] < 2.0 and not coin.collected]
+
+    def check_collision(self, obj1, obj2, *, threshold=0.5):
+        dist = np.linalg.norm(obj1.position - obj2.position)
+        return dist < threshold
 
     def _on_key(self, window, key, scancode, action, mods):
         if action == glfw.PRESS and self.state == "playing":
