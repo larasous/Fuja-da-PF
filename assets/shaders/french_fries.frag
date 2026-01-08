@@ -1,9 +1,10 @@
 #version 330 core
 out vec4 FragColor;
 
-uniform vec3 color;
+in vec2 TexCoord;          // Recebe coordenadas do vertex shader
+uniform sampler2D texture1; // Textura difusa
 
 void main()
 {
-    FragColor = vec4(color, 1.0);
+    FragColor = texture(texture1, TexCoord);
 }

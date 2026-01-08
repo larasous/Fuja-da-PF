@@ -34,14 +34,14 @@ class Object:
 
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
-        self.model.render()
+        self.model.render(shader)
 
 
 class Obstacle(Object):
-    def __init__(self, model, scale=[1.0, 1.0, 1.0], color=[1.0, 1.0, 1.0]):
+    def __init__(self, model, scale=[1.0, 1.0, 1.0], color=[1.0, 1.0, 1.0], speed=2.0):
         # sempre nasce na origem
         super().__init__(model, scale=scale)
-        self.speed = 3.0
+        self.speed = speed
         self.color = np.array(color, dtype=np.float32)
 
     def set_lane_and_depth(self, lane, depth):
@@ -58,4 +58,4 @@ class Obstacle(Object):
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
         shader.set_vec3("color", self.color)
-        self.model.render()
+        self.model.render(shader)

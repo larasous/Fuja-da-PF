@@ -14,7 +14,7 @@ uniform sampler2D texture1; // textura opcional
 
 void main()
 {
-    // iluminação básica Phong
+    // normalizada
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
 
@@ -26,16 +26,17 @@ void main()
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 
-    vec3 ambient = 0.2 * lightColor;
-    vec3 diffuse = diff * lightColor;
+    // iluminação Phong
+    vec3 ambient  = 0.2 * lightColor;
+    vec3 diffuse  = diff * lightColor;
     vec3 specular = spec * lightColor;
 
     vec3 resultColor = (ambient + diffuse + specular) * objectColor;
 
-    // se tiver textura, multiplica
+    // fallback: se não houver textura, usa só a cor
     vec4 texColor = texture(texture1, TexCoord);
-    if(texColor.a > 0.0)
-        FragColor = vec4(resultColor, 1.0) * texColor;
-    else
+    if(texColor.r == 0.0 && texColor.g == 0.0 && texColor.b == 0.0)
         FragColor = vec4(resultColor, 1.0);
+    else
+        FragColor = vec4(resultColor, 1.0) * texColor;
 }
