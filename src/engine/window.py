@@ -12,6 +12,7 @@ from src.objects.model import Model
 from src.ui.start_screen import StartScreen
 from src.engine.input import InputManager
 from src.engine.skybox import Skybox
+from src.utils.camera import create_projection_matrix
 import numpy as np
 import random
 import time
@@ -39,7 +40,6 @@ class Window:
         if not self.window:
             glfw.terminate()
             raise Exception("Failed to create GLFW window")
-
         self.camera = CameraManager()
         glfw.make_context_current(self.window)
         glfw.set_window_size_callback(self.window, self._on_resize)
@@ -111,7 +111,7 @@ class Window:
         self.collectible_timer = 0.0
         self.collectible_frequency = 1.0
         self.collectible_batch = 1
-        
+
         self.coinModel = Model(objects_path.COIN_PATH)
 
         glEnable(GL_DEPTH_TEST)
@@ -170,9 +170,7 @@ class Window:
                 view_matrix = self.camera.get_view_matrix()
 
                 # MATRIZES
-                projection_matrix = Matrix44.perspective_projection(
-                    45.0, metrics.WINDOW_WIDTH / metrics.WINDOW_HEIGHT, 0.1, 100.0
-                )
+                projection_matrix = create_projection_matrix()
 
                 view_matrix_skybox = view_matrix.copy()
                 view_matrix_skybox[3, :3] = 0.0
@@ -201,6 +199,8 @@ class Window:
 
                 # --- Player ---
                 self.player_shader.use()
+
+                # Matrizes
                 glUniformMatrix4fv(
                     glGetUniformLocation(self.player_shader.program, "projection"),
                     1,
@@ -213,8 +213,24 @@ class Window:
                     GL_FALSE,
                     view_matrix.astype(np.float32),
                 )
+                glUniformMatrix4fv(
+                    glGetUniformLocation(self.player_shader.program, "model"),
+                    1,
+                    GL_FALSE,
+                    self.player.get_model_matrix().astype(np.float32),
+                )
 
-                # desenhar player (bolo)
+                # Textura
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(
+                    GL_TEXTURE_2D,
+                    self.player.model.textures[self.player.model.current_material],
+                )
+                glUniform1i(
+                    glGetUniformLocation(self.player_shader.program, "texture1"), 0
+                )
+
+                # Desenhar player
                 self.player.update(0.01)
                 self.player.render(self.player_shader)
                 # print("Player position:", self.player.position)
@@ -242,7 +258,7 @@ class Window:
                 for obs in self.obstacles:
                     obs.render(self.french_fries_shader)
 
-                #collectibles
+                # collectibles
                 self.coin_shader.use()
                 glUniformMatrix4fv(
                     glGetUniformLocation(self.coin_shader.program, "projection"),
@@ -261,8 +277,7 @@ class Window:
                 self._spawn_collectibles()
                 self._update_collectibles()
                 for coin in self.collectibles:
-                    coin.render(self.coin_shader)
-
+                    coin.render(self.coin_shader, self.camera, None)
 
                 self.hud.update_time(delta_time)
                 self.hud.update_distance(self.player_speed * delta_time)
@@ -271,7 +286,7 @@ class Window:
                 for obs in self.obstacles:
                     if self.check_collision(self.player, obs, threshold=0.8):
                         print("Colisão com obstáculo!")
-                        #self.game_over()   # quando tiver pronto
+                        # self.game_over()   # quando tiver pronto
                         break
 
                 for coin in self.collectibles:
@@ -319,9 +334,15 @@ class Window:
 
             for i in range(self.collectible_batch):
                 z_offset = -20.0 - i * 2.0
-                coin_y = 0.0 
-                coin = Collectible(self.coinModel, scale=[1.0, 1.0, 1.0], color=[1.0, 0.84, 0.0])
-                coin.set_transform(translation=[lane, coin_y, z_offset], scale=[1.0, 1.0, 1.0])
+                coin_y = 0.0
+                coin = Collectible(
+                    self.coinModel,
+                    scale=[1.0, 1.0, 1.0],
+                    color=[1.0, 0.84, 0.0],
+                )
+                coin.set_transform(
+                    translation=[lane, coin_y, z_offset], scale=[1.0, 1.0, 1.0]
+                )
                 self.collectibles.append(coin)
 
             self.collectible_timer = 0.0
@@ -329,7 +350,11 @@ class Window:
     def _update_collectibles(self):
         for coin in self.collectibles:
             coin.update(0.01)
-        self.collectibles = [coin for coin in self.collectibles if coin.position[2] < 2.0 and not coin.collected]
+        self.collectibles = [
+            coin
+            for coin in self.collectibles
+            if coin.position[2] < 2.0 and not coin.collected
+        ]
 
     def check_collision(self, obj1, obj2, *, threshold=0.5):
         dist = np.linalg.norm(obj1.position - obj2.position)

@@ -37,4 +37,4 @@ class Player(Object):
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
         shader.set_vec3("color", self.color)
-        self.model.render()
+        self.model.render(shader)
