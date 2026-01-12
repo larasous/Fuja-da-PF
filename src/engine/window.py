@@ -44,32 +44,7 @@ class Window:
         glfw.make_context_current(self.window)
         glfw.set_window_size_callback(self.window, self._on_resize)
 
-        skybox_vertex = read_shader_file(shaders_path.VERTEX_SKYBOX)
-        skybox_fragment = read_shader_file(shaders_path.FRAGMENT_SKYBOX)
-
-        french_fries_vertex = read_shader_file(shaders_path.VERTEX_FRENCH_FRIES)
-        french_fries_fragment = read_shader_file(shaders_path.FRAGMENT_FRENCH_FRIES)
-
-        player_vertex = read_shader_file(shaders_path.VERTEX_PLAYER)
-        player_fragment = read_shader_file(shaders_path.FRAGMENT_PLAYER)
-
-        text_vert = read_shader_file(shaders_path.VERTEX_HUD)
-        text_frag = read_shader_file(shaders_path.FRAGMENT_HUD)
-
-        coin_vert = read_shader_file(shaders_path.VERTEX_COIN)
-        coin_frag = read_shader_file(shaders_path.FRAGMENT_COIN)
-
-        self.coin_shader = Shader(coin_vert, coin_frag)
-
-        self.hud_text_shader = Shader(text_vert, text_frag).program
-
-        self.hud = HUD(self.hud_text_shader)
-
-        self.french_fries_shader = Shader(french_fries_vertex, french_fries_fragment)
-
-        self.player_shader = Shader(player_vertex, player_fragment)
-
-        self.skybox_shader = Shader(skybox_vertex, skybox_fragment)
+        self._init_shaders()
 
         self.skybox = Skybox(
             [
@@ -115,6 +90,31 @@ class Window:
         self.coinModel = Model(objects_path.COIN_PATH)
 
         glEnable(GL_DEPTH_TEST)
+
+    def _init_shaders(self):
+        def load_shader(vertex_path, fragment_path):
+            return Shader(
+                read_shader_file(vertex_path), read_shader_file(fragment_path)
+            )
+
+        # Shaders principais
+        self.skybox_shader = load_shader(
+            shaders_path.VERTEX_SKYBOX, shaders_path.FRAGMENT_SKYBOX
+        )
+        self.french_fries_shader = load_shader(
+            shaders_path.VERTEX_FRENCH_FRIES, shaders_path.FRAGMENT_FRENCH_FRIES
+        )
+        self.player_shader = load_shader(
+            shaders_path.VERTEX_PLAYER, shaders_path.FRAGMENT_PLAYER
+        )
+        self.coin_shader = load_shader(
+            shaders_path.VERTEX_COIN, shaders_path.FRAGMENT_COIN
+        )
+
+        # HUD
+        hud_shader = load_shader(shaders_path.VERTEX_HUD, shaders_path.FRAGMENT_HUD)
+        self.hud_text_shader = hud_shader.program
+        self.hud = HUD(self.hud_text_shader)
 
     def show_lore(self, path, typing_speed=0.05, pause_between_blocks=2.5):
         with open(path, "r", encoding="utf-8") as file:
