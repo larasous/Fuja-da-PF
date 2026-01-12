@@ -61,33 +61,14 @@ class Window:
         self.player_speed = 3.0
 
         self.camera = CameraManager()
-        self.player_model = Model(objects_path.CAKE_PATH)
-        self.player = Player(self.player_model, scale=[2.0, 2.0, 2.0])
 
         self.input = InputManager()
         self.input.register_callbacks(self.window)
+
+        self._init_models()
         glfw.set_key_callback(self.window, self._on_key)
 
-        self.frenchFries = Model(objects_path.FRENCH_FRIES_PATH)
-
         self._update_metrics()
-
-        self.start_screen = StartScreen(self.window, self.input)
-        self.state = "start"
-
-        self.lanes = [-2.0, 0.0, 2.0]
-        self.player_lane = 1
-        self.obstacles = []
-        self.spawn_timer = 0.0
-
-        self.lore_screen = None
-
-        self.collectibles = []
-        self.collectible_timer = 0.0
-        self.collectible_frequency = 1.0
-        self.collectible_batch = 1
-
-        self.coinModel = Model(objects_path.COIN_PATH)
 
         glEnable(GL_DEPTH_TEST)
 
@@ -115,6 +96,32 @@ class Window:
         hud_shader = load_shader(shaders_path.VERTEX_HUD, shaders_path.FRAGMENT_HUD)
         self.hud_text_shader = hud_shader.program
         self.hud = HUD(self.hud_text_shader)
+
+    def _init_models(self):
+        # Player
+        self.player_model = Model(objects_path.CAKE_PATH)
+        self.player = Player(self.player_model, scale=[2.0, 2.0, 2.0])
+
+        # Obstáculos
+        self.frenchFries = Model(objects_path.FRENCH_FRIES_PATH)
+
+        # Coletáveis
+        self.coinModel = Model(objects_path.COIN_PATH)
+
+        # Estado inicial do jogo
+        self.start_screen = StartScreen(self.window, self.input)
+        self.state = "start"
+
+        # Variáveis de controle
+        self.lanes = [-2.0, 0.0, 2.0]
+        self.player_lane = 1
+        self.obstacles = []
+        self.spawn_timer = 0.0
+        self.lore_screen = None
+        self.collectibles = []
+        self.collectible_timer = 0.0
+        self.collectible_frequency = 1.0
+        self.collectible_batch = 1
 
     def show_lore(self, path, typing_speed=0.05, pause_between_blocks=2.5):
         with open(path, "r", encoding="utf-8") as file:
