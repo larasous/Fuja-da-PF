@@ -1,12 +1,11 @@
 from OpenGL.GL import *
 import numpy as np
-from src.utils.skybox import create_cube_vertices
 from src.engine.texture import Texture
 
 
 class Skybox:
     def __init__(self, faces):
-        self.vertices = create_cube_vertices()
+        self.vertices = self._create_cube_vertices()
 
         # VAO e VBO
         self.vao = glGenVertexArrays(1)
@@ -26,6 +25,30 @@ class Skybox:
 
         self.texture = Texture(GL_TEXTURE_CUBE_MAP)
         self.texture.load_cubemap(faces)
+        
+    def _create_cube_vertices(self, size=1.0):
+        s = size
+        vertices = [
+            # frente
+            -s, -s,  s,  s, -s,  s,  s,  s,  s,
+            s,  s,  s, -s,  s,  s, -s, -s,  s,
+            # trás
+            -s, -s, -s, -s,  s, -s,  s,  s, -s,
+            s,  s, -s,  s, -s, -s, -s, -s, -s,
+            # esquerda
+            -s,  s,  s, -s,  s, -s, -s, -s, -s,
+            -s, -s, -s, -s, -s,  s, -s,  s,  s,
+            # direita
+            s,  s,  s,  s, -s, -s,  s,  s, -s,
+            s, -s, -s,  s,  s,  s,  s, -s,  s,
+            # topo
+            -s,  s, -s, -s,  s,  s,  s,  s,  s,
+            s,  s,  s,  s,  s, -s, -s,  s, -s,
+            # base
+            -s, -s, -s,  s, -s, -s,  s, -s,  s,
+            s, -s,  s, -s, -s,  s, -s, -s, -s,
+        ]
+        return np.array(vertices, dtype=np.float32)
 
     def draw(self, shader_program):
         glDepthFunc(GL_LEQUAL)
