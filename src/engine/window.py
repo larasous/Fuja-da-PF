@@ -161,11 +161,6 @@ class Window:
                 self.lore_screen.update()
                 self.lore_screen.draw()
                 if self.lore_screen.finished:
-                    if hasattr(self.lore_screen, "impl") and self.lore_screen.impl:
-                        self.lore_screen.impl.shutdown()
-                        self.lore_screen.impl.shutdown()
-                        self.start_screen.impl = None
-                        self.lore_screen.impl = None
                     self.state = "playing"
 
             # --- Jogo rodando ---
