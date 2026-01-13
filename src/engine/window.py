@@ -20,6 +20,8 @@ import json
 from src.objects.player import Player
 from src.engine.camera import CameraManager
 from src.ui.hud import HUD
+import imgui
+from imgui.integrations.glfw import GlfwRenderer
 
 
 class Window:
@@ -40,9 +42,12 @@ class Window:
         if not self.window:
             glfw.terminate()
             raise Exception("Failed to create GLFW window")
-        self.camera = CameraManager()
+
         glfw.make_context_current(self.window)
         glfw.set_window_size_callback(self.window, self._on_resize)
+
+        imgui.create_context()
+        self.imgui_renderer = GlfwRenderer(self.window, attach_callbacks=False)
 
         self._init_shaders()
 
@@ -66,7 +71,6 @@ class Window:
         self.input.register_callbacks(self.window)
 
         self._init_models()
-        glfw.set_key_callback(self.window, self._on_key)
 
         self._update_metrics()
 
@@ -109,7 +113,7 @@ class Window:
         self.coinModel = Model(objects_path.COIN_PATH)
 
         # Estado inicial do jogo
-        self.start_screen = StartScreen(self.window, self.input)
+        self.start_screen = StartScreen(self.window, self.input, self.imgui_renderer)
         self.state = "start"
 
         # Variáveis de controle
@@ -127,22 +131,24 @@ class Window:
         with open(path, "r", encoding="utf-8") as file:
             blocks = json.load(file)
             self.lore_screen = LoreScene(
-                self.window, blocks, typing_speed, pause_between_blocks
+                self.window,
+                blocks,
+                self.imgui_renderer,
+                typing_speed,
+                pause_between_blocks,
             )
 
     def run(self):
         while not glfw.window_should_close(self.window):
             # Processa eventos do GLFW
             glfw.poll_events()
-            self.state = "playing"
 
             # --- Tela inicial ---
             if self.state == "start":
-                print("Estado: start")
+
                 self.start_screen.update()
                 self.start_screen.draw()
                 if self.start_screen.finished:
-                    # Quando ENTER for detectado
                     self.show_lore(
                         "assets/lore/intro.json",
                         typing_speed=0.05,
@@ -155,6 +161,11 @@ class Window:
                 self.lore_screen.update()
                 self.lore_screen.draw()
                 if self.lore_screen.finished:
+                    if hasattr(self.lore_screen, "impl") and self.lore_screen.impl:
+                        self.lore_screen.impl.shutdown()
+                        self.lore_screen.impl.shutdown()
+                        self.start_screen.impl = None
+                        self.lore_screen.impl = None
                     self.state = "playing"
 
             # --- Jogo rodando ---
@@ -164,6 +175,19 @@ class Window:
                 delta_time = now - self.last_time
                 self.last_time = now
                 self.hud.start_timer()
+
+                # dentro de "playing"
+                if self.input.was_pressed(glfw.KEY_LEFT):
+                    self.player.move_left(self.lanes)
+                elif self.input.was_pressed(glfw.KEY_RIGHT):
+                    self.player.move_right(self.lanes)
+
+                if self.input.was_pressed(glfw.KEY_1):
+                    self.camera.set_mode("first_person")
+                elif self.input.was_pressed(glfw.KEY_2):
+                    self.camera.set_mode("third_person")
+                elif self.input.was_pressed(glfw.KEY_3):
+                    self.camera.set_mode("top_down")
 
                 glClearColor(0.1, 0.1, 0.1, 1.0)
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

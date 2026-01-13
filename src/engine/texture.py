@@ -17,7 +17,7 @@ class Texture:
     def delete(self):
         glDeleteTextures([self.texture_id])
 
-    def load_2d(self, width, height, data=None):
+    def load_texture(self, width, height, data=None):
         self.bind()
         glTexParameteri(self.target, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(self.target, GL_TEXTURE_WRAP_T, GL_REPEAT)
