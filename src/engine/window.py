@@ -4,7 +4,6 @@ from OpenGL.GLU import *
 from pyrr import Matrix44
 from src.objects.collectible import Collectible
 from src.constants import metrics, objects_path, textures_path, shaders_path
-from src.utils.shaders import read_shader_file
 from src.engine.shader import Shader
 from src.scene.lore_scene import LoreScene
 from src.objects.objects import Obstacle
@@ -77,29 +76,28 @@ class Window:
         glEnable(GL_DEPTH_TEST)
 
     def _init_shaders(self):
-        def load_shader(vertex_path, fragment_path):
-            return Shader(
-                read_shader_file(vertex_path), read_shader_file(fragment_path)
-            )
-
-        # Shaders principais
-        self.skybox_shader = load_shader(
-            shaders_path.VERTEX_SKYBOX, shaders_path.FRAGMENT_SKYBOX
+        self.skybox_shader = Shader(
+            vertex_path=shaders_path.VERTEX_SKYBOX,
+            fragment_path=shaders_path.FRAGMENT_SKYBOX,
         )
-        self.french_fries_shader = load_shader(
-            shaders_path.VERTEX_FRENCH_FRIES, shaders_path.FRAGMENT_FRENCH_FRIES
+        self.french_fries_shader = Shader(
+            vertex_path=shaders_path.VERTEX_FRENCH_FRIES,
+            fragment_path=shaders_path.FRAGMENT_FRENCH_FRIES,
         )
-        self.player_shader = load_shader(
-            shaders_path.VERTEX_PLAYER, shaders_path.FRAGMENT_PLAYER
+        self.player_shader = Shader(
+            vertex_path=shaders_path.VERTEX_PLAYER,
+            fragment_path=shaders_path.FRAGMENT_PLAYER,
         )
-        self.coin_shader = load_shader(
-            shaders_path.VERTEX_COIN, shaders_path.FRAGMENT_COIN
+        self.coin_shader = Shader(
+            vertex_path=shaders_path.VERTEX_COIN,
+            fragment_path=shaders_path.FRAGMENT_COIN,
         )
 
         # HUD
-        hud_shader = load_shader(shaders_path.VERTEX_HUD, shaders_path.FRAGMENT_HUD)
-        self.hud_text_shader = hud_shader.program
-        self.hud = HUD(self.hud_text_shader)
+        self.hud_shader = Shader(
+            vertex_path=shaders_path.VERTEX_HUD, fragment_path=shaders_path.FRAGMENT_HUD
+        )
+        self.hud = HUD(self.hud_shader)
 
     def _init_models(self):
         # Player
@@ -194,127 +192,53 @@ class Window:
                     self.player.position[2],
                 )
                 view_matrix = self.camera.get_view_matrix()
-
-                # MATRIZES
                 projection_matrix = create_projection_matrix()
 
+                # Skybox
                 view_matrix_skybox = view_matrix.copy()
                 view_matrix_skybox[3, :3] = 0.0
-
                 glDepthFunc(GL_LEQUAL)
                 glDepthMask(GL_FALSE)
-                self.skybox_shader.use()
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.skybox_shader.program, "projection"),
-                    1,
-                    GL_FALSE,
-                    projection_matrix.astype(np.float32),
-                )
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.skybox_shader.program, "view"),
-                    1,
-                    GL_FALSE,
-                    view_matrix_skybox.astype(np.float32),
-                )
-                glUniform1i(
-                    glGetUniformLocation(self.skybox_shader.program, "skybox"), 0
-                )
+                self.skybox_shader.set_matrices(projection_matrix, view_matrix_skybox)
+                self.skybox_shader.set_texture(0, "skybox")  # se for cubemap
                 self.skybox.draw(self.skybox_shader.program)
                 glDepthFunc(GL_LESS)
                 glDepthMask(GL_TRUE)
 
-                # --- Player ---
-                self.player_shader.use()
-
-                # Matrizes
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.player_shader.program, "projection"),
-                    1,
-                    GL_FALSE,
-                    projection_matrix.astype(np.float32),
+                # Player
+                self.player_shader.set_matrices(
+                    projection_matrix, view_matrix, self.player.get_model_matrix()
                 )
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.player_shader.program, "view"),
-                    1,
-                    GL_FALSE,
-                    view_matrix.astype(np.float32),
+                self.player_shader.set_texture(
+                    self.player.model.textures[self.player.model.current_material]
                 )
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.player_shader.program, "model"),
-                    1,
-                    GL_FALSE,
-                    self.player.get_model_matrix().astype(np.float32),
-                )
-
-                # Textura
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(
-                    GL_TEXTURE_2D,
-                    self.player.model.textures[self.player.model.current_material],
-                )
-                glUniform1i(
-                    glGetUniformLocation(self.player_shader.program, "texture1"), 0
-                )
-
-                # Desenhar player
                 self.player.update(0.01)
                 self.player.render(self.player_shader)
-                # print("Player position:", self.player.position)
 
-                # --- Objetos ---
-                self.french_fries_shader.use()
-                glUniformMatrix4fv(
-                    glGetUniformLocation(
-                        self.french_fries_shader.program, "projection"
-                    ),
-                    1,
-                    GL_FALSE,
-                    projection_matrix.astype(np.float32),
-                )
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.french_fries_shader.program, "view"),
-                    1,
-                    GL_FALSE,
-                    view_matrix.astype(np.float32),
-                )
-
-                # desenhar obstáculos
-                self._spawn_obstacles()
-                self._update_obstacles()
+                # --- Obstáculos ---
                 for obs in self.obstacles:
-                    obs.render(self.french_fries_shader)
+                    obs.render(self.french_fries_shader, projection_matrix, view_matrix)
 
-                # collectibles
-                self.coin_shader.use()
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.coin_shader.program, "projection"),
-                    1,
-                    GL_FALSE,
-                    projection_matrix.astype(np.float32),
-                )
-
-                glUniformMatrix4fv(
-                    glGetUniformLocation(self.coin_shader.program, "view"),
-                    1,
-                    GL_FALSE,
-                    view_matrix.astype(np.float32),
-                )
-
-                self._spawn_collectibles()
-                self._update_collectibles()
+                # --- Moedas ---
                 for coin in self.collectibles:
-                    coin.render(self.coin_shader, self.camera, None)
+                    coin.render(
+                        self.coin_shader, projection_matrix, view_matrix, self.camera
+                    )
 
                 self.hud.update_time(delta_time)
                 self.hud.update_distance(self.player_speed * delta_time)
                 self.hud.draw(metrics.WINDOW_WIDTH, metrics.WINDOW_HEIGHT)
 
+                self._spawn_obstacles()
+                self._update_obstacles()
                 for obs in self.obstacles:
                     if self.check_collision(self.player, obs, threshold=0.8):
                         print("Colisão com obstáculo!")
                         # self.game_over()   # quando tiver pronto
                         break
 
+                self._spawn_collectibles()
+                self._update_collectibles()
                 for coin in self.collectibles:
                     if self.check_collision(self.player, coin, threshold=0.5):
                         coin.collected = True

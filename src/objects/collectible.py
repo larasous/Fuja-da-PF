@@ -1,5 +1,6 @@
 from src.objects.objects import Object
 from OpenGL.GL import *
+import numpy as np
 
 
 class Collectible(Object):
@@ -28,65 +29,13 @@ class Collectible(Object):
 
     def collect(self):
         self.collected = True
-        # talvez esconder ou remover do mundo
         self.scale = [0.0, 0.0, 0.0]
 
-    def render(self, shader_program, camera=None, light_pos=None):
-        glUseProgram(shader_program.program)
-
-        if camera is None:
-            camera = self.default_camera
-        if light_pos is None:
-            light_pos = [0.0, 4.0, 2.0]
-
-        # cor dourada
-        glUniform3f(
-            glGetUniformLocation(shader_program.program, "objectColor"),
-            self.color[0],
-            self.color[1],
-            self.color[2],
-        )
-
-        # luz branca
-        glUniform3f(
-            glGetUniformLocation(shader_program.program, "lightColor"), 1.0, 1.0, 1.0
-        )
-
-        # posição da luz
-        glUniform3f(
-            glGetUniformLocation(shader_program.program, "lightPos"),
-            light_pos[0],
-            light_pos[1],
-            light_pos[2],
-        )
-
-        # posição da câmera
-        glUniform3f(
-            glGetUniformLocation(shader_program.program, "viewPos"),
-            camera.position[0],
-            camera.position[1],
-            camera.position[2],
-        )
-
-        # matrizes
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader_program.program, "model"),
-            1,
-            GL_FALSE,
-            self.get_model_matrix(),
-        )
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader_program.program, "view"),
-            1,
-            GL_FALSE,
-            camera.get_view_matrix(),
-        )
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader_program.program, "projection"),
-            1,
-            GL_FALSE,
-            camera.projection_matrix,
-        )
-
-        # chama render do modelo
-        self.model.render(shader_program)
+    def render(self, shader, projection, view, camera=None, light_pos=None):
+        shader.use()
+        shader.set_matrices(projection, view, self.get_model_matrix())
+        shader.set_vec3("objectColor", self.color)
+        shader.set_vec3("lightColor", [1.0, 1.0, 1.0])
+        shader.set_vec3("lightPos", light_pos or [0.0, 4.0, 2.0])
+        shader.set_vec3("viewPos", camera.position)
+        self.model.render(shader)
