@@ -11,7 +11,6 @@ from src.objects.model import Model
 from src.ui.start_screen import StartScreen
 from src.engine.input import InputManager
 from src.engine.skybox import Skybox
-from src.utils.camera import create_projection_matrix
 import numpy as np
 import random
 import time
@@ -140,6 +139,7 @@ class Window:
         while not glfw.window_should_close(self.window):
             # Processa eventos do GLFW
             glfw.poll_events()
+            self.state = "playing"
 
             # --- Tela inicial ---
             if self.state == "start":
@@ -192,7 +192,7 @@ class Window:
                     self.player.position[2],
                 )
                 view_matrix = self.camera.get_view_matrix()
-                projection_matrix = create_projection_matrix()
+                projection_matrix = self.camera.projection_matrix
 
                 # Skybox
                 view_matrix_skybox = view_matrix.copy()
