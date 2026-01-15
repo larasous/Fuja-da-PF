@@ -7,7 +7,7 @@ class LoreBackground:
     def __init__(self, path):
         self.texture_id, self.width, self.height = load_ui_texture(path)
 
-    def draw(self, window):
+    def render(self, window):
         window_width, window_height = glfw.get_window_size(window)
 
         gl.glMatrixMode(gl.GL_PROJECTION)

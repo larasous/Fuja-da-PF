@@ -1,25 +1,20 @@
 import glfw
 from OpenGL.GL import *
-from OpenGL.GLU import *
-from pyrr import Matrix44
-from src.objects.collectible import Collectible
-from src.constants import metrics, objects_path, textures_path, shaders_path
-from src.engine.shader import Shader
-from src.scene.lore_scene import LoreScene
-from src.objects.objects import Obstacle
-from src.objects.model import Model
-from src.ui.start_screen import StartScreen
-from src.engine.input import InputManager
-from src.engine.skybox import Skybox
-import numpy as np
-import random
 import time
 import json
-from src.objects.player import Player
-from src.engine.camera import CameraManager
-from src.ui.hud import HUD
 import imgui
 from imgui.integrations.glfw import GlfwRenderer
+from src.constants import metrics, objects_path, textures_path, shaders_path
+from src.engine.shader import Shader
+from src.engine.skybox import Skybox
+from src.engine.input import InputManager
+from src.engine.camera import CameraManager
+from src.objects.model import Model
+from src.scene.start_scene import StartScene
+from src.scene.lore_scene import LoreScene
+from src.ui.hud import HUD
+from src.scene.game_scene import GameScene
+from src.engine.scene import SceneManager
 
 
 class Window:
@@ -48,6 +43,7 @@ class Window:
         self.imgui_renderer = GlfwRenderer(self.window, attach_callbacks=False)
 
         self._init_shaders()
+        self._init_models()
 
         self.skybox = Skybox(
             [
@@ -60,271 +56,61 @@ class Window:
             ]
         )
 
-        self.last_time = time.time()
-        self.player_speed = 3.0
-
         self.camera = CameraManager()
-
         self.input = InputManager()
         self.input.register_callbacks(self.window)
-
-        self._init_models()
 
         self._update_metrics()
 
         glEnable(GL_DEPTH_TEST)
 
-    def _init_shaders(self):
-        self.skybox_shader = Shader(
-            vertex_path=shaders_path.VERTEX_SKYBOX,
-            fragment_path=shaders_path.FRAGMENT_SKYBOX,
-        )
-        self.french_fries_shader = Shader(
-            vertex_path=shaders_path.VERTEX_FRENCH_FRIES,
-            fragment_path=shaders_path.FRAGMENT_FRENCH_FRIES,
-        )
-        self.player_shader = Shader(
-            vertex_path=shaders_path.VERTEX_PLAYER,
-            fragment_path=shaders_path.FRAGMENT_PLAYER,
-        )
-        self.coin_shader = Shader(
-            vertex_path=shaders_path.VERTEX_COIN,
-            fragment_path=shaders_path.FRAGMENT_COIN,
+        self.scene_manager = SceneManager(
+            self.window,
+            self.input,
+            self.camera,
+            self.hud,
+            self.shaders,
+            self.models,
+            self.skybox,
+            self.imgui_renderer,
         )
 
-        # HUD
-        self.hud_shader = Shader(
-            vertex_path=shaders_path.VERTEX_HUD, fragment_path=shaders_path.FRAGMENT_HUD
-        )
-        self.hud = HUD(self.hud_shader)
+        self.start_scene = self.scene_manager.create_start_scene()
+        self.state = "start"
+        self.lore_scene = None
+        self.game_scene = None
+
+    def _init_shaders(self):
+        self.shaders = {
+            "skybox": Shader(
+                vertex_path=shaders_path.VERTEX_SKYBOX,
+                fragment_path=shaders_path.FRAGMENT_SKYBOX,
+            ),
+            "player": Shader(
+                vertex_path=shaders_path.VERTEX_PLAYER,
+                fragment_path=shaders_path.FRAGMENT_PLAYER,
+            ),
+            "coin": Shader(
+                vertex_path=shaders_path.VERTEX_COIN,
+                fragment_path=shaders_path.FRAGMENT_COIN,
+            ),
+            "obstacle": Shader(
+                vertex_path=shaders_path.VERTEX_FRENCH_FRIES,
+                fragment_path=shaders_path.FRAGMENT_FRENCH_FRIES,
+            ),
+            "hud": Shader(
+                vertex_path=shaders_path.VERTEX_HUD,
+                fragment_path=shaders_path.FRAGMENT_HUD,
+            ),
+        }
+        self.hud = HUD(self.shaders["hud"])
 
     def _init_models(self):
-        # Player
-        self.player_model = Model(objects_path.CAKE_PATH)
-        self.player = Player(self.player_model, scale=[2.0, 2.0, 2.0])
-
-        # Obstáculos
-        self.frenchFries = Model(objects_path.FRENCH_FRIES_PATH)
-
-        # Coletáveis
-        self.coinModel = Model(objects_path.COIN_PATH)
-
-        # Estado inicial do jogo
-        self.start_screen = StartScreen(self.window, self.input, self.imgui_renderer)
-        self.state = "start"
-
-        # Variáveis de controle
-        self.lanes = [-2.0, 0.0, 2.0]
-        self.player_lane = 1
-        self.obstacles = []
-        self.spawn_timer = 0.0
-        self.lore_screen = None
-        self.collectibles = []
-        self.collectible_timer = 0.0
-        self.collectible_frequency = 1.0
-        self.collectible_batch = 1
-
-    def show_lore(self, path, typing_speed=0.05, pause_between_blocks=2.5):
-        with open(path, "r", encoding="utf-8") as file:
-            blocks = json.load(file)
-            self.lore_screen = LoreScene(
-                self.window,
-                blocks,
-                self.imgui_renderer,
-                typing_speed,
-                pause_between_blocks,
-            )
-
-    def run(self):
-        while not glfw.window_should_close(self.window):
-            # Processa eventos do GLFW
-            glfw.poll_events()
-            self.state = "playing"
-
-            # --- Tela inicial ---
-            if self.state == "start":
-
-                self.start_screen.update()
-                self.start_screen.draw()
-                if self.start_screen.finished:
-                    self.show_lore(
-                        "assets/lore/intro.json",
-                        typing_speed=0.05,
-                        pause_between_blocks=3.0,
-                    )
-                    self.state = "lore"
-
-            # --- Tela de lore ---
-            elif self.state == "lore":
-                self.lore_screen.update()
-                self.lore_screen.draw()
-                if self.lore_screen.finished:
-                    self.state = "playing"
-
-            # --- Jogo rodando ---
-            elif self.state == "playing":
-
-                now = time.time()
-                delta_time = now - self.last_time
-                self.last_time = now
-                self.hud.start_timer()
-
-                # dentro de "playing"
-                if self.input.was_pressed(glfw.KEY_LEFT):
-                    self.player.move_left(self.lanes)
-                elif self.input.was_pressed(glfw.KEY_RIGHT):
-                    self.player.move_right(self.lanes)
-
-                if self.input.was_pressed(glfw.KEY_1):
-                    self.camera.set_mode("first_person")
-                elif self.input.was_pressed(glfw.KEY_2):
-                    self.camera.set_mode("third_person")
-                elif self.input.was_pressed(glfw.KEY_3):
-                    self.camera.set_mode("top_down")
-
-                glClearColor(0.1, 0.1, 0.1, 1.0)
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-                # --- Atualiza câmera ---
-                self.camera.update(
-                    self.player.position[0],
-                    self.player.position[1],
-                    self.player.position[2],
-                )
-                view_matrix = self.camera.get_view_matrix()
-                projection_matrix = self.camera.projection_matrix
-
-                # Skybox
-                view_matrix_skybox = view_matrix.copy()
-                view_matrix_skybox[3, :3] = 0.0
-                glDepthFunc(GL_LEQUAL)
-                glDepthMask(GL_FALSE)
-                self.skybox_shader.set_matrices(projection_matrix, view_matrix_skybox)
-                self.skybox_shader.set_texture(0, "skybox")  # se for cubemap
-                self.skybox.draw(self.skybox_shader.program)
-                glDepthFunc(GL_LESS)
-                glDepthMask(GL_TRUE)
-
-                # Player
-                self.player_shader.set_matrices(
-                    projection_matrix, view_matrix, self.player.get_model_matrix()
-                )
-                self.player_shader.set_texture(
-                    self.player.model.textures[self.player.model.current_material]
-                )
-                self.player.update(0.01)
-                self.player.render(self.player_shader)
-
-                # --- Obstáculos ---
-                for obs in self.obstacles:
-                    obs.render(self.french_fries_shader, projection_matrix, view_matrix)
-
-                # --- Moedas ---
-                for coin in self.collectibles:
-                    coin.render(
-                        self.coin_shader, projection_matrix, view_matrix, self.camera
-                    )
-
-                self.hud.update_time(delta_time)
-                self.hud.update_distance(self.player_speed * delta_time)
-                self.hud.draw(metrics.WINDOW_WIDTH, metrics.WINDOW_HEIGHT)
-
-                self._spawn_obstacles()
-                self._update_obstacles()
-                for obs in self.obstacles:
-                    if self.check_collision(self.player, obs, threshold=0.8):
-                        print("Colisão com obstáculo!")
-                        # self.game_over()   # quando tiver pronto
-                        break
-
-                self._spawn_collectibles()
-                self._update_collectibles()
-                for coin in self.collectibles:
-                    if self.check_collision(self.player, coin, threshold=0.5):
-                        coin.collected = True
-                        self.hud.update_coins(1)
-                        print("Moeda coletada! Total:", self.hud.coin_count)
-
-                self.collectibles = [c for c in self.collectibles if not c.collected]
-
-            self.input.update()
-            glfw.swap_buffers(self.window)
-
-        glfw.terminate()
-
-    def _spawn_obstacles(self):
-        self.spawn_timer += 0.01
-        if self.spawn_timer > 1.5:
-            lane = random.choice(self.lanes)
-            # nasce na origem
-            obs = Obstacle(self.frenchFries, scale=[2.5, 2.5, 2.5])
-            print("Obstacle created at:", obs.position)  # ← log inicial
-
-            # aplica transformação depois
-            obs.set_transform(translation=[lane, 0.0, -20.0], scale=[2.5, 2.5, 2.5])
-            print("Obstacle after transform:", obs.position)  # ← log após deslocamento
-
-            self.obstacles.append(obs)
-            self.spawn_timer = 0.05
-
-    def _update_obstacles(self):
-        for obs in self.obstacles:
-            obs.update(0.01)
-        # mantém apenas os obstáculos que ainda não passaram do player
-        self.obstacles = [obs for obs in self.obstacles if obs.position[2] < 2.0]
-
-    def _spawn_collectibles(self):
-        self.collectible_timer += 0.01
-        if self.collectible_timer > self.collectible_frequency:
-            lane = random.choice(self.lanes)
-
-            if self.obstacles and self.obstacles[-1].position[0] == lane:
-                lanes_available = [l for l in self.lanes if l != lane]
-                lane = random.choice(lanes_available)
-
-            for i in range(self.collectible_batch):
-                z_offset = -20.0 - i * 2.0
-                coin_y = 0.0
-                coin = Collectible(
-                    self.coinModel,
-                    scale=[1.0, 1.0, 1.0],
-                    color=[1.0, 0.84, 0.0],
-                )
-                coin.set_transform(
-                    translation=[lane, coin_y, z_offset], scale=[1.0, 1.0, 1.0]
-                )
-                self.collectibles.append(coin)
-
-            self.collectible_timer = 0.0
-
-    def _update_collectibles(self):
-        for coin in self.collectibles:
-            coin.update(0.01)
-        self.collectibles = [
-            coin
-            for coin in self.collectibles
-            if coin.position[2] < 2.0 and not coin.collected
-        ]
-
-    def check_collision(self, obj1, obj2, *, threshold=0.5):
-        dist = np.linalg.norm(obj1.position - obj2.position)
-        return dist < threshold
-
-    def _on_key(self, window, key, scancode, action, mods):
-        if action == glfw.PRESS and self.state == "playing":
-            # movimento lateral
-            if key == glfw.KEY_LEFT:
-                self.player.move_left(self.lanes)
-            elif key == glfw.KEY_RIGHT:
-                self.player.move_right(self.lanes)
-
-            # troca de câmera
-            elif key == glfw.KEY_1:
-                self.camera.set_mode("first_person")
-            elif key == glfw.KEY_2:
-                self.camera.set_mode("third_person")
-            elif key == glfw.KEY_3:
-                self.camera.set_mode("top_down")
+        self.models = {
+            "player": Model(objects_path.CAKE_PATH),
+            "coin": Model(objects_path.COIN_PATH),
+            "french_fries": Model(objects_path.FRENCH_FRIES_PATH),
+        }
 
     def _update_metrics(self):
         width, height = glfw.get_framebuffer_size(self.window)
@@ -336,3 +122,27 @@ class Window:
         metrics.WINDOW_WIDTH = width
         metrics.WINDOW_HEIGHT = height
         glViewport(0, 0, width, height)
+
+    def run(self):
+        while not glfw.window_should_close(self.window):
+            glfw.poll_events()
+
+            if self.state == "start" and self.start_scene.finished:
+                print("Mudando para LORE...")
+                self.lore_scene = self.scene_manager.create_lore_scene(
+                    "assets/lore/intro.json"
+                )
+                self.state = "lore"
+
+            elif self.state == "lore" and self.lore_scene and self.lore_scene.finished:
+                print("Mudando para PLAYING...")
+                self.game_scene = self.scene_manager.create_game_scene()
+                self.state = "playing"
+
+            self.scene_manager.update()
+            self.scene_manager.render()
+
+            self.input.update()
+            glfw.swap_buffers(self.window)
+
+        glfw.terminate()

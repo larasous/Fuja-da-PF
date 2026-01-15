@@ -39,10 +39,9 @@ class StartScreen:
             print("ENTER detectado!")
             self.finished = True
 
-    def draw(self):
+    def render(self):
         window_width, window_height = glfw.get_window_size(self.window)
 
-        # --- Desenha imagem de fundo ---
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
         gl.glOrtho(0, window_width, 0, window_height, -1, 1)

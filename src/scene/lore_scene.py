@@ -22,12 +22,12 @@ class LoreScene:
         if self.typing_box.finished:
             self.finished = True
 
-    def draw(self):
+    def render(self):
         self.imgui_layer.begin_frame()
 
-        self.background.draw(self.window)
+        self.background.render(self.window)
 
         width, height = glfw.get_window_size(self.window)
-        self.typing_box.draw(width, height)
+        self.typing_box.render(width, height)
 
         self.imgui_layer.end_frame()
