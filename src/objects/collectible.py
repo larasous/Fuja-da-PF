@@ -1,4 +1,5 @@
 from src.objects.objects import Object
+from src.constants import metrics
 from OpenGL.GL import *
 import numpy as np
 
@@ -9,7 +10,7 @@ class Collectible(Object):
         model,
         scale=[1.0, 1.0, 1.0],
         color=[1.0, 0.84, 0.0],
-        speed=2.0,
+        speed=metrics.SPEED_OBJECTS,
         rotation_speed=2.0,
     ):
         super().__init__(model, scale=scale)

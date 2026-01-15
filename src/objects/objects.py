@@ -1,5 +1,6 @@
 import numpy as np
 from pyrr import Matrix44
+from src.constants import metrics
 
 
 class Object:
@@ -35,7 +36,13 @@ class Object:
 
 
 class Obstacle(Object):
-    def __init__(self, model, scale=[1.0, 1.0, 1.0], color=[1.0, 1.0, 1.0], speed=2.0):
+    def __init__(
+        self,
+        model,
+        scale=[1.0, 1.0, 1.0],
+        color=[1.0, 1.0, 1.0],
+        speed=metrics.SPEED_OBJECTS,
+    ):
         super().__init__(model, scale=scale)
         self.speed = speed
         self.color = np.array(color, dtype=np.float32)

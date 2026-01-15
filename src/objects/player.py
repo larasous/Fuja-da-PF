@@ -1,6 +1,7 @@
-from OpenGL.GL import *
 import numpy as np
+from OpenGL.GL import *
 from src.objects.objects import Object
+from src.constants import metrics
 
 
 class Player(Object):
@@ -11,7 +12,7 @@ class Player(Object):
         )
         self.current_lane = 1
         self.target_x = 0.0
-        self.speed = 3.5  # velocidade de transição lateral
+        self.speed = metrics.SPEED_LANE_CHANGE
         self.color = np.array(color, dtype=np.float32)
 
     def move_left(self, lanes):
