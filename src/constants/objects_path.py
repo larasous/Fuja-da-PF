@@ -2,3 +2,4 @@ FRENCH_FRIES_PATH = "assets\\models\\obstacles\\specific\\gluttony\\batata-frita
 PLAYER_PATH = "assets\\models\\obstacles\\specific\\Player.obj"
 COIN_PATH = "assets\\models\\obstacles\\specific\\gluttony\\Moeda.obj"
 BURGER_PATH = "assets\\models\\obstacles\\specific\\gluttony\\burger.obj"
+SUSHI_PATH = "assets\\models\\obstacles\\specific\\gluttony\\sushi.obj"

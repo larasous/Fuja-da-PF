@@ -28,6 +28,8 @@ class GameScene:
         self.obstacles = []
         self.obstacle_scales = {
             "burger": [1, 1, 1],
+            "sushi": [0.5, 0.5, 0.5],
+            "french_fries": [2.5, 2.5, 2.5],
         }
 
         self.collectibles = []
@@ -143,7 +145,7 @@ class GameScene:
                 [(n, m) for n, m in self.models.items() if n not in ("player", "coin")]
             )
 
-            scale = self.obstacle_scales.get(name, [2.5, 2.5, 2.5])
+            scale = self.obstacle_scales.get(name, None)
 
             obs = Obstacle(model, scale=scale)
             obs.set_transform(translation=[lane, 0.0, -20.0], scale=scale)

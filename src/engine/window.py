@@ -107,6 +107,7 @@ class Window:
             "coin": Model(objects_path.COIN_PATH),
             "french_fries": Model(objects_path.FRENCH_FRIES_PATH),
             "burger": Model(objects_path.BURGER_PATH),
+            "sushi": Model(objects_path.SUSHI_PATH),
         }
 
     def _update_metrics(self):
