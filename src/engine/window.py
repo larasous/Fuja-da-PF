@@ -1,7 +1,5 @@
 import glfw
 from OpenGL.GL import *
-import time
-import json
 import imgui
 from imgui.integrations.glfw import GlfwRenderer
 from src.constants import metrics, objects_path, textures_path, shaders_path
@@ -10,10 +8,7 @@ from src.engine.skybox import Skybox
 from src.engine.input import InputManager
 from src.engine.camera import CameraManager
 from src.objects.model import Model
-from src.scene.start_scene import StartScene
-from src.scene.lore_scene import LoreScene
 from src.ui.hud import HUD
-from src.scene.game_scene import GameScene
 from src.engine.scene import SceneManager
 
 
@@ -37,6 +32,7 @@ class Window:
             raise Exception("Failed to create GLFW window")
 
         glfw.make_context_current(self.window)
+
         glfw.set_window_size_callback(self.window, self._on_resize)
 
         imgui.create_context()
@@ -110,6 +106,7 @@ class Window:
             "player": Model(objects_path.PLAYER_PATH),
             "coin": Model(objects_path.COIN_PATH),
             "french_fries": Model(objects_path.FRENCH_FRIES_PATH),
+            "burger": Model(objects_path.BURGER_PATH),
         }
 
     def _update_metrics(self):
