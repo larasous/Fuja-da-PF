@@ -1,6 +1,7 @@
-from src.scene.game_scene import GameScene
 import json
+from src.scene.game_scene import GameScene
 from src.scene.lore_scene import LoreScene
+from src.scene.start_scene import StartScene
 
 
 class SceneManager:
@@ -41,7 +42,6 @@ class SceneManager:
                 self.current_scene.draw()
 
     def create_start_scene(self):
-        from src.scene.start_scene import StartScene
 
         scene = StartScene(self.window, self.input, self.imgui_renderer)
         self.set_scene(scene)

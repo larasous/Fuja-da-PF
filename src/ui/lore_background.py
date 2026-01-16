@@ -8,7 +8,9 @@ class LoreBackground:
         self.texture_id, self.width, self.height = load_ui_texture(path)
 
     def render(self, window):
-        window_width, window_height = glfw.get_window_size(window)
+        window_width, window_height = glfw.get_framebuffer_size(window)
+        if window_width == 0 or window_height == 0:
+            return
 
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()

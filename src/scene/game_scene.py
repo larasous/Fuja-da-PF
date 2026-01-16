@@ -19,7 +19,6 @@ class GameScene:
         self.shaders = shaders
         self.models = models
         self.skybox = skybox
-
         # Player
         self.player = Player(self.models["player"], scale=[2.0, 2.0, 2.0])
 
@@ -27,6 +26,10 @@ class GameScene:
         self.lanes = [-2.0, 0.0, 2.0]
         self.player_lane = 1
         self.obstacles = []
+        self.obstacle_scales = {
+            "burger": [1, 1, 1],
+        }
+
         self.collectibles = []
 
         # Timers
@@ -53,7 +56,7 @@ class GameScene:
             self.player.move_left(self.lanes)
         elif self.input.was_pressed(glfw.KEY_RIGHT):
             self.player.move_right(self.lanes)
-        
+
         if self.input.was_pressed(glfw.KEY_SPACE):
             print("Espaço pressionado")
             self.player.jump()
@@ -89,17 +92,19 @@ class GameScene:
         self.shaders["player"].set_matrices(
             projection_matrix, view_matrix, self.player.get_model_matrix()
         )
-        self.shaders["player"].set_texture(
-            self.player.model.textures[self.player.model.current_material]
-        )
+
         self.player.update(metrics.TICK)
         self.player.render(self.shaders["player"])
 
         # Obstáculos
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
+        glFrontFace(GL_CCW)
         for obs in self.obstacles:
             shader = self.shaders.get("obstacle")
             if shader:
                 obs.render(shader, projection_matrix, view_matrix)
+        glDisable(GL_CULL_FACE)
 
         # Coletáveis
         for coin in self.collectibles:
@@ -116,7 +121,7 @@ class GameScene:
         self._update_obstacles(metrics.TICK)
         for obs in self.obstacles:
             if self.check_collision(self.player, obs, threshold=0.8):
-                #print("Colisão com obstáculo!")
+                # print("Colisão com obstáculo!")
                 break
 
         self._spawn_collectibles(metrics.TICK)
@@ -133,9 +138,17 @@ class GameScene:
         self.spawn_timer += delta_time
         if self.spawn_timer > 1.5:
             lane = random.choice(self.lanes)
-            obs = Obstacle(self.models["french_fries"], scale=[2.5, 2.5, 2.5])
-            obs.set_transform(translation=[lane, 0.0, -20.0], scale=[2.5, 2.5, 2.5])
+
+            name, model = random.choice(
+                [(n, m) for n, m in self.models.items() if n not in ("player", "coin")]
+            )
+
+            scale = self.obstacle_scales.get(name, [2.5, 2.5, 2.5])
+
+            obs = Obstacle(model, scale=scale)
+            obs.set_transform(translation=[lane, 0.0, -20.0], scale=scale)
             self.obstacles.append(obs)
+
             self.spawn_timer = 0.0
 
     def _update_obstacles(self, delta_time):
