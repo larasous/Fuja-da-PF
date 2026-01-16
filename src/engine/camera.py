@@ -1,12 +1,13 @@
-from pyrr import Matrix44
-from src.utils.camera import create_projection_matrix
 import numpy as np
+from pyrr import Matrix44
+from src.constants import metrics
 
 
 class CameraManager:
-    def __init__(self):
+    def __init__(self, fov=45.0, near=0.1, far=100.0):
         self.mode = "third_person"
 
+        # posição inicial e alvo
         self.current_pos = np.array([0.0, 5.0, 7.0], dtype=np.float32)
         self.current_target = np.array([0.0, 0.0, -10.0], dtype=np.float32)
 
@@ -15,7 +16,13 @@ class CameraManager:
 
         self.transition_speed = 0.01
 
-        self.projection_matrix = create_projection_matrix()
+        # parâmetros da projeção
+        self.fov = fov
+        self.near = near
+        self.far = far
+        self.projection_matrix = self.create_projection_matrix(
+            metrics.WINDOW_WIDTH, metrics.WINDOW_HEIGHT
+        )
 
     @property
     def position(self):
@@ -52,7 +59,17 @@ class CameraManager:
         ) * self.transition_speed
 
     def get_view_matrix(self):
-        # retorna a matriz de visão moderna
         return Matrix44.look_at(
             eye=self.current_pos, target=self.current_target, up=[0.0, 1.0, 0.0]
         )
+
+    def create_projection_matrix(self, width, height):
+        """Cria a matriz de projeção em perspectiva"""
+        aspect_ratio = width / height
+        return Matrix44.perspective_projection(
+            self.fov, aspect_ratio, self.near, self.far
+        )
+
+    def update_projection(self, width, height):
+        """Recalcula a projeção quando a janela muda de tamanho"""
+        self.projection_matrix = self.create_projection_matrix(width, height)

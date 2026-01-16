@@ -24,7 +24,7 @@ class TypingBox:
         if now > self.block_timings[-1][1]:
             self.finished = True
 
-    def draw(self, window_width, window_height):
+    def render(self, window_width, window_height):
         # janela do lore
         lore_width, lore_height = 900, 200
         center_x = (window_width - lore_width) // 2

@@ -5,11 +5,13 @@ from src.ui.typing_box import TypingBox
 
 
 class LoreScene:
-    def __init__(self, window, text_blocks, typing_speed=0.05, pause=2.5):
+    def __init__(
+        self, window, text_blocks, imgui_renderer, typing_speed=0.05, pause=2.5
+    ):
         self.window = window
 
         # UI Components
-        self.imgui_layer = ImGuiLayer(window)
+        self.imgui_layer = ImGuiLayer(window, imgui_renderer)
         self.background = LoreBackground("assets/backgrounds/capeta_lore.png")
         self.typing_box = TypingBox(text_blocks, typing_speed, pause)
 
@@ -20,12 +22,12 @@ class LoreScene:
         if self.typing_box.finished:
             self.finished = True
 
-    def draw(self):
+    def render(self):
         self.imgui_layer.begin_frame()
 
-        self.background.draw(self.window)
+        self.background.render(self.window)
 
         width, height = glfw.get_window_size(self.window)
-        self.typing_box.draw(width, height)
+        self.typing_box.render(width, height)
 
         self.imgui_layer.end_frame()
