@@ -107,7 +107,7 @@ class Window:
 
     def _init_models(self):
         self.models = {
-            "player": Model(objects_path.CAKE_PATH),
+            "player": Model(objects_path.PLAYER_PATH),
             "coin": Model(objects_path.COIN_PATH),
             "french_fries": Model(objects_path.FRENCH_FRIES_PATH),
         }

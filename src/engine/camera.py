@@ -35,12 +35,11 @@ class CameraManager:
     def update(self, player_x, player_y, player_z):
         # define alvo conforme o modo
         if self.mode == "first_person":
-            self.target_pos = np.array(
-                [player_x, player_y + 0.5, player_z], dtype=np.float32
-            )
-            self.target_target = np.array(
-                [player_x, player_y + 0.5, player_z - 5.0], dtype=np.float32
-            )
+            forward = np.array([0.0, 0.0, -1.0], dtype=np.float32)
+
+            camera_offset = 0.5 
+            self.target_pos = np.array([player_x, player_y + 0.5, player_z], dtype=np.float32) + forward * camera_offset
+            self.target_target = self.target_pos + forward * 5.0
 
         elif self.mode == "third_person":
             self.target_pos = np.array([0.0, 5.0, 7.0], dtype=np.float32)

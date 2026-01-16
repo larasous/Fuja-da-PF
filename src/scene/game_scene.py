@@ -53,6 +53,10 @@ class GameScene:
             self.player.move_left(self.lanes)
         elif self.input.was_pressed(glfw.KEY_RIGHT):
             self.player.move_right(self.lanes)
+        
+        if self.input.was_pressed(glfw.KEY_SPACE):
+            print("Espaço pressionado")
+            self.player.jump()
 
         if self.input.was_pressed(glfw.KEY_1):
             self.camera.set_mode("first_person")
@@ -112,7 +116,7 @@ class GameScene:
         self._update_obstacles(metrics.TICK)
         for obs in self.obstacles:
             if self.check_collision(self.player, obs, threshold=0.8):
-                print("Colisão com obstáculo!")
+                #print("Colisão com obstáculo!")
                 break
 
         self._spawn_collectibles(metrics.TICK)
