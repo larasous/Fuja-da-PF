@@ -3,11 +3,11 @@ import random
 import time
 import numpy as np
 from OpenGL.GL import *
-from time import perf_counter
 from src.constants import metrics
 from src.objects.player import Player
 from src.objects.objects import Obstacle
 from src.objects.collectible import Collectible
+from src.constants.colors import COLOR_PALETTE
 
 
 class GameScene:
@@ -78,6 +78,21 @@ class GameScene:
         self.camera.update(*self.player.position)
         view_matrix = self.camera.get_view_matrix()
         projection_matrix = self.camera.projection_matrix
+        
+        if self.camera.mode == "top_down":
+            light_direction = np.array([0.0, -1.0, 0.0], dtype=np.float32)
+        else:
+            light_direction = np.array([0.0, 0.0, -1.0], dtype=np.float32)
+
+        light_color = np.array(COLOR_PALETTE["WHITE"][:3], dtype=np.float32)
+
+        for shader_name in ["player", "obstacle", "coin"]:
+            shader = self.shaders.get(shader_name)
+            if shader:
+                shader.use()
+                shader.set_vec3("lightDir", light_direction)
+                shader.set_vec3("lightColor", light_color)
+                shader.set_vec3("viewPos", self.camera.position)
 
         # Skybox
         view_matrix_skybox = view_matrix.copy()

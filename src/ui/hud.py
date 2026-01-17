@@ -116,12 +116,12 @@ class HUD:
         ]
 
         name_colors = {
-            "Moedas:": COLOR_PALETTE[4],  # Verde
-            "Tempo:": COLOR_PALETTE[5],  # Azul
-            "Distância:": COLOR_PALETTE[6],  # Azul claro
-            "Pecado:": COLOR_PALETTE[10],  # Laranja-avermelhado
+            "Moedas:":      COLOR_PALETTE["GREEN"],
+            "Tempo:":       COLOR_PALETTE["BLUE_BRIGHT"],
+            "Distância:":   COLOR_PALETTE["SOFT_BLUE"],
+            "Pecado:":      COLOR_PALETTE["RED_ORANGE"],
         }
-        value_color = COLOR_PALETTE[12]
+        value_color = COLOR_PALETTE["YELLOW"]
 
         ortho = Matrix44.orthogonal_projection(0, window_width, window_height, 0, -1, 1)
         y_offset = 10

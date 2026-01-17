@@ -55,5 +55,5 @@ class Obstacle(Object):
 
     def render(self, shader, projection, view):
         shader.set_matrices(projection, view, self.get_model_matrix())
-        shader.set_vec3("color", self.color)
+        shader.set_vec3("objectColor", self.color)
         self.model.render(shader)
