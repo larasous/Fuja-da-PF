@@ -3,9 +3,9 @@ from imgui.integrations.glfw import GlfwRenderer
 
 
 class ImGuiLayer:
-    def __init__(self, window):
-        imgui.create_context()
-        self.impl = GlfwRenderer(window)
+    def __init__(self, window, renderer=None):
+
+        self.impl = renderer or GlfwRenderer(window, attach_callbacks=False)
 
         self._setup_style()
 

@@ -3,10 +3,11 @@ import numpy as np
 from OpenGL.GL import *
 from pyrr import Matrix44
 from src.constants.colors import COLOR_PALETTE
+from src.engine.shader import Shader  # importa sua classe Shader
 
 
 class HUD:
-    def __init__(self, text_shader_program):
+    def __init__(self, shader: Shader):
         pygame.init()
         pygame.font.init()
         self.font = pygame.font.SysFont("Arial Black", 20)
@@ -28,7 +29,9 @@ class HUD:
         }
         self.timer_active = False
 
-        self.text_shader = text_shader_program
+        self.shader = shader
+
+        # buffers
         self.vao = glGenVertexArrays(1)
         self.vbo = glGenBuffers(1)
         self.ebo = glGenBuffers(1)
@@ -50,6 +53,7 @@ class HUD:
         # cache de texturas
         self.text_cache = {}
 
+    # --- estado ---
     def start_timer(self):
         self.timer_active = True
 
@@ -86,7 +90,6 @@ class HUD:
 
         surface = self.font.render(text, True, (255, 255, 255))
         width, height = surface.get_size()
-
         data = pygame.image.tostring(surface, "RGBA", False)
 
         tex = glGenTextures(1)
@@ -113,10 +116,10 @@ class HUD:
         ]
 
         name_colors = {
-            "Moedas:": COLOR_PALETTE[4],  # Green
-            "Tempo:": COLOR_PALETTE[5],  # Blue
-            "Distância:": COLOR_PALETTE[6],  # Soft blue
-            "Pecado:": COLOR_PALETTE[10],  # Red-orange
+            "Moedas:": COLOR_PALETTE[4],  # Verde
+            "Tempo:": COLOR_PALETTE[5],  # Azul
+            "Distância:": COLOR_PALETTE[6],  # Azul claro
+            "Pecado:": COLOR_PALETTE[10],  # Laranja-avermelhado
         }
         value_color = COLOR_PALETTE[12]
 
@@ -127,14 +130,9 @@ class HUD:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glUseProgram(self.text_shader)
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.text_shader, "ortho"),
-            1,
-            GL_FALSE,
-            np.array(ortho, dtype=np.float32),
-        )
-        glUniform1i(glGetUniformLocation(self.text_shader, "textTex"), 0)
+        self.shader.use()
+        self.shader.set_mat4("ortho", np.array(ortho, dtype=np.float32))
+        self.shader.set_texture(0, uniform_name="textTex")
 
         for name, value in entries:
             tex_name, nw, nh = self._get_text_texture(name)
@@ -170,7 +168,7 @@ class HUD:
             glBufferSubData(GL_ARRAY_BUFFER, 0, verts_name.nbytes, verts_name)
             glBindVertexArray(self.vao)
             glUniform4f(
-                glGetUniformLocation(self.text_shader, "color"), *name_colors[name]
+                glGetUniformLocation(self.shader.program, "color"), *name_colors[name]
             )
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)
 
@@ -197,10 +195,12 @@ class HUD:
                 dtype=np.float32,
             )
             glBufferSubData(GL_ARRAY_BUFFER, 0, verts_value.nbytes, verts_value)
-            glUniform4f(glGetUniformLocation(self.text_shader, "color"), *value_color)
+            glUniform4f(
+                glGetUniformLocation(self.shader.program, "color"), *value_color
+            )
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)
 
-            y_offset += nh + 4  # próxima linha
+            y_offset += nh + 4
 
         glBindVertexArray(0)
         glBindTexture(GL_TEXTURE_2D, 0)

@@ -1,6 +1,7 @@
-from OpenGL.GL import *
 import numpy as np
+from OpenGL.GL import *
 from src.objects.objects import Object
+from src.constants import metrics
 
 
 class Player(Object):
@@ -11,8 +12,13 @@ class Player(Object):
         )
         self.current_lane = 1
         self.target_x = 0.0
-        self.speed = 3.5  # velocidade de transição lateral
+        self.speed = metrics.SPEED_LANE_CHANGE
         self.color = np.array(color, dtype=np.float32)
+        self.is_jumping = False
+        self.jump_velocity = 0.0
+        self.gravity = -6.0
+        self.jump_strength = 5.0
+        self.ground_y = self.position[1]
 
     def move_left(self, lanes):
         if self.current_lane > 0:
@@ -23,6 +29,11 @@ class Player(Object):
         if self.current_lane < len(lanes) - 1:
             self.current_lane += 1
             self.target_x = lanes[self.current_lane]
+            
+    def jump(self):
+        if not self.is_jumping:
+            self.is_jumping = True
+            self.jump_velocity = self.jump_strength
 
     def update(self, delta_time):
         # movimento suave no eixo X
@@ -33,8 +44,19 @@ class Player(Object):
                 self.position[0] = self.target_x
             else:
                 self.position[0] += step if dx > 0 else -step
+        else:
+            self.position[0] = self.target_x
+
+        if self.is_jumping:
+            self.position[1] += self.jump_velocity * delta_time
+            self.jump_velocity += self.gravity * delta_time
+
+            if self.position[1] <= self.ground_y:
+                self.position[1] = self.ground_y
+                self.is_jumping = False
+                self.jump_velocity = 0.0
 
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
         shader.set_vec3("color", self.color)
-        self.model.render()
+        self.model.render(shader)

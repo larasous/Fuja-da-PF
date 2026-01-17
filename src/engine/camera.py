@@ -1,10 +1,13 @@
-from pyrr import Matrix44
 import numpy as np
+from pyrr import Matrix44
+from src.constants import metrics
+
 
 class CameraManager:
-    def __init__(self):
+    def __init__(self, fov=45.0, near=0.1, far=100.0):
         self.mode = "third_person"
 
+        # posição inicial e alvo
         self.current_pos = np.array([0.0, 5.0, 7.0], dtype=np.float32)
         self.current_target = np.array([0.0, 0.0, -10.0], dtype=np.float32)
 
@@ -13,6 +16,18 @@ class CameraManager:
 
         self.transition_speed = 0.01
 
+        # parâmetros da projeção
+        self.fov = fov
+        self.near = near
+        self.far = far
+        self.projection_matrix = self.create_projection_matrix(
+            metrics.WINDOW_WIDTH, metrics.WINDOW_HEIGHT
+        )
+
+    @property
+    def position(self):
+        return self.current_pos
+
     def set_mode(self, mode: str):
         if mode in ("first_person", "third_person", "top_down"):
             self.mode = mode
@@ -20,8 +35,11 @@ class CameraManager:
     def update(self, player_x, player_y, player_z):
         # define alvo conforme o modo
         if self.mode == "first_person":
-            self.target_pos = np.array([player_x, player_y + 0.5, player_z], dtype=np.float32)
-            self.target_target = np.array([player_x, player_y + 0.5, player_z - 5.0], dtype=np.float32)
+            forward = np.array([0.0, 0.0, -1.0], dtype=np.float32)
+
+            camera_offset = 0.5 
+            self.target_pos = np.array([player_x, player_y + 0.5, player_z], dtype=np.float32) + forward * camera_offset
+            self.target_target = self.target_pos + forward * 5.0
 
         elif self.mode == "third_person":
             self.target_pos = np.array([0.0, 5.0, 7.0], dtype=np.float32)
@@ -29,16 +47,28 @@ class CameraManager:
 
         elif self.mode == "top_down":
             self.target_pos = np.array([player_x, 20.0, 0.0], dtype=np.float32)
-            self.target_target = np.array([player_x, 0.0, player_z - 5.0], dtype=np.float32)
+            self.target_target = np.array(
+                [player_x, 0.0, player_z - 5.0], dtype=np.float32
+            )
 
         # interpolação suave
         self.current_pos += (self.target_pos - self.current_pos) * self.transition_speed
-        self.current_target += (self.target_target - self.current_target) * self.transition_speed
+        self.current_target += (
+            self.target_target - self.current_target
+        ) * self.transition_speed
 
     def get_view_matrix(self):
-        # retorna a matriz de visão moderna
         return Matrix44.look_at(
-            eye=self.current_pos,
-            target=self.current_target,
-            up=[0.0, 1.0, 0.0]
+            eye=self.current_pos, target=self.current_target, up=[0.0, 1.0, 0.0]
         )
+
+    def create_projection_matrix(self, width, height):
+        """Cria a matriz de projeção em perspectiva"""
+        aspect_ratio = width / height
+        return Matrix44.perspective_projection(
+            self.fov, aspect_ratio, self.near, self.far
+        )
+
+    def update_projection(self, width, height):
+        """Recalcula a projeção quando a janela muda de tamanho"""
+        self.projection_matrix = self.create_projection_matrix(width, height)

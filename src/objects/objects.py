@@ -1,6 +1,6 @@
 import numpy as np
-from OpenGL.GL import *
 from pyrr import Matrix44
+from src.constants import metrics
 
 
 class Object:
@@ -20,9 +20,7 @@ class Object:
         if self.rotation[2] != 0:
             rotation = Matrix44.from_z_rotation(self.rotation[2]) @ rotation
         translation = Matrix44.from_translation(self.position)
-
-        model_matrix = scaling @ rotation @ translation
-        return model_matrix
+        return scaling @ rotation @ translation
 
     def set_transform(self, translation=None, scale=None, rotation=None):
         if translation is not None:
@@ -32,30 +30,30 @@ class Object:
         if rotation is not None:
             self.rotation = np.array(rotation, dtype=np.float32)
 
-    def render(self, shader):
-        shader.set_mat4("model", self.get_model_matrix())
-        self.model.render()
+    def render(self, shader, projection, view):
+        shader.set_matrices(projection, view, self.get_model_matrix())
+        self.model.render(shader)
 
 
 class Obstacle(Object):
-    def __init__(self, model, scale=[1.0, 1.0, 1.0], color=[1.0, 1.0, 1.0]):
-        # sempre nasce na origem
+    def __init__(
+        self,
+        model,
+        scale=[1.0, 1.0, 1.0],
+        color=[1.0, 1.0, 1.0],
+        speed=metrics.SPEED_OBJECTS,
+    ):
         super().__init__(model, scale=scale)
-        self.speed = 3.0
+        self.speed = speed
         self.color = np.array(color, dtype=np.float32)
 
     def set_lane_and_depth(self, lane, depth):
-        """
-        Aplica a transformação para deslocar o obstáculo
-        até a pista (lane) e profundidade (depth).
-        """
         self.set_transform(translation=[lane, 0.0, depth], scale=self.scale)
 
     def update(self, delta_time):
-        # movimento no eixo Z (vem em direção ao player)
         self.position[2] += self.speed * delta_time
 
-    def render(self, shader):
-        shader.set_mat4("model", self.get_model_matrix())
+    def render(self, shader, projection, view):
+        shader.set_matrices(projection, view, self.get_model_matrix())
         shader.set_vec3("color", self.color)
-        self.model.render()
+        self.model.render(shader)

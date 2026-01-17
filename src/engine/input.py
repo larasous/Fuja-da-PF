@@ -1,5 +1,6 @@
 import glfw
 
+
 class InputManager:
     def __init__(self):
         self.keys_down = set()
@@ -26,8 +27,11 @@ class InputManager:
 
     def was_pressed(self, key):
         return key in self.keys_pressed
-    
+
     def enter_pressed(self):
-        return (glfw.KEY_ENTER in self.keys_pressed) or (glfw.KEY_KP_ENTER in self.keys_pressed)
+        return (glfw.KEY_ENTER in self.keys_pressed) or (
+            glfw.KEY_KP_ENTER in self.keys_pressed
+        )
+
     def any_key_pressed(self):
         return len(self.keys_pressed) > 0

@@ -1,6 +1,6 @@
 # Blender 5.0.1
 # www.blender.org
-# mtllib Coin.mtl
+mtllib coin.mtl
 o Coin_Coin_0
 v -0.088616 -0.107118 0.016762
 v 0.000000 0.000000 0.016762
@@ -3140,6 +3140,7 @@ vt 0.172055 0.629843
 vt 0.190914 0.669921
 vt 0.214648 0.707320
 s 1
+g Coin_Coin_0_Coin
 usemtl Coin
 f 1/1/1 2/2/2 3/3/3
 f 4/4/4 2/2/2 1/1/1

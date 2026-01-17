@@ -1,123 +1,13 @@
 from OpenGL.GL import *
 import numpy as np
+from src.engine.texture import Texture
 
 
 class Skybox:
     def __init__(self, faces):
-        self.vertices = np.array(
-            [
-                -1,
-                1,
-                -1,
-                -1,
-                -1,
-                -1,
-                1,
-                -1,
-                -1,
-                1,
-                -1,
-                -1,
-                1,
-                1,
-                -1,
-                -1,
-                1,
-                -1,
-                -1,
-                -1,
-                1,
-                -1,
-                -1,
-                -1,
-                -1,
-                1,
-                -1,
-                -1,
-                1,
-                -1,
-                -1,
-                1,
-                1,
-                -1,
-                -1,
-                1,
-                1,
-                -1,
-                -1,
-                1,
-                -1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                -1,
-                1,
-                -1,
-                -1,
-                -1,
-                -1,
-                1,
-                -1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                -1,
-                1,
-                -1,
-                -1,
-                1,
-                -1,
-                1,
-                -1,
-                1,
-                1,
-                -1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
-                -1,
-                1,
-                1,
-                -1,
-                1,
-                -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                1,
-                1,
-                -1,
-                -1,
-                1,
-                -1,
-                -1,
-                -1,
-                -1,
-                1,
-                1,
-                -1,
-                1,
-            ],
-            dtype=np.float32,
-        )
+        self.vertices = self._create_cube_vertices()
 
+        # VAO e VBO
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
 
@@ -133,51 +23,38 @@ class Skybox:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
-        self.texture_id = self._load_cubemap(faces)
-
-    def _load_cubemap(self, faces):
-        from PIL import Image
-
-        texture_id = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id)
-
-        targets = [
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-            GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-            GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-            GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-            GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-            GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+        self.texture = Texture(GL_TEXTURE_CUBE_MAP)
+        self.texture.load_cubemap(faces)
+        
+    def _create_cube_vertices(self, size=1.0):
+        s = size
+        vertices = [
+            # frente
+            -s, -s,  s,  s, -s,  s,  s,  s,  s,
+            s,  s,  s, -s,  s,  s, -s, -s,  s,
+            # trás
+            -s, -s, -s, -s,  s, -s,  s,  s, -s,
+            s,  s, -s,  s, -s, -s, -s, -s, -s,
+            # esquerda
+            -s,  s,  s, -s,  s, -s, -s, -s, -s,
+            -s, -s, -s, -s, -s,  s, -s,  s,  s,
+            # direita
+            s,  s,  s,  s, -s, -s,  s,  s, -s,
+            s, -s, -s,  s,  s,  s,  s, -s,  s,
+            # topo
+            -s,  s, -s, -s,  s,  s,  s,  s,  s,
+            s,  s,  s,  s,  s, -s, -s,  s, -s,
+            # base
+            -s, -s, -s,  s, -s, -s,  s, -s,  s,
+            s, -s,  s, -s, -s,  s, -s, -s, -s,
         ]
-
-        for i, face in enumerate(faces):
-            img = Image.open(face).convert("RGB").resize((1024, 1024))
-            img_data = img.tobytes()
-            glTexImage2D(
-                targets[i],
-                0,
-                GL_RGB,
-                img.width,
-                img.height,
-                0,
-                GL_RGB,
-                GL_UNSIGNED_BYTE,
-                img_data,
-            )
-
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
-
-        return texture_id
+        return np.array(vertices, dtype=np.float32)
 
     def draw(self, shader_program):
         glDepthFunc(GL_LEQUAL)
+        glUseProgram(shader_program)
         glBindVertexArray(self.vao)
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_CUBE_MAP, self.texture_id)
-        glDrawArrays(GL_TRIANGLES, 0, 36)
+        self.texture.bind(0)
+        glDrawArrays(GL_TRIANGLES, 0, len(self.vertices) // 3)
         glBindVertexArray(0)
         glDepthFunc(GL_LESS)
