@@ -91,8 +91,8 @@ class Window:
                 fragment_path=shaders_path.FRAGMENT_COIN,
             ),
             "obstacle": Shader(
-                vertex_path=shaders_path.VERTEX_FRENCH_FRIES,
-                fragment_path=shaders_path.FRAGMENT_FRENCH_FRIES,
+                vertex_path=shaders_path.VERTEX_OBSTACLES,
+                fragment_path=shaders_path.FRAGMENT_OBSTACLES,
             ),
             "hud": Shader(
                 vertex_path=shaders_path.VERTEX_HUD,

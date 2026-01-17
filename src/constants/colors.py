@@ -1,20 +1,20 @@
 from src.utils.colors import hex_to_rgba
 
-HEX_PALETTE = [
-    "#1a1a1a",  # Dark gray
-    "#34568B",  # Blue
-    "#FF6F61",  # Coral
-    "#6B5B95",  # Purple
-    "#2EC31B",  # Green
-    "#0D18F6",  # Blue bright
-    "#92A8D1",  # Soft blue
-    "#955251",  # Burgundy
-    "#B565A7",  # Lavender
-    "#009B77",  # Teal
-    "#DD4124",  # Red-orange
-    "#45B8AC",  # Aqua
-    "#EFC050",  # Yellow
-    "#5B5EA6",  # Indigo
-]
-
-COLOR_PALETTE = [hex_to_rgba(color) for color in HEX_PALETTE]
+COLOR_PALETTE = {
+    "DARK_GRAY": hex_to_rgba("#1a1a1a"),
+    "BLUE": hex_to_rgba("#34568B"),
+    "CORAL": hex_to_rgba("#FF6F61"),
+    "PURPLE": hex_to_rgba("#6B5B95"),
+    "GREEN": hex_to_rgba("#2EC31B"),
+    "BLUE_BRIGHT": hex_to_rgba("#0D18F6"),
+    "SOFT_BLUE": hex_to_rgba("#92A8D1"),
+    "BURGUNDY": hex_to_rgba("#955251"),
+    "LAVENDER": hex_to_rgba("#B565A7"),
+    "TEAL": hex_to_rgba("#009B77"),
+    "RED_ORANGE": hex_to_rgba("#DD4124"),
+    "AQUA": hex_to_rgba("#45B8AC"),
+    "YELLOW": hex_to_rgba("#EFC050"),
+    "INDIGO": hex_to_rgba("#5B5EA6"),
+    "WHITE": hex_to_rgba("#FFFFFF"),
+    "ORANGE": hex_to_rgba("#FFA500"),
+}

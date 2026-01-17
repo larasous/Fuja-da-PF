@@ -5,7 +5,7 @@ from src.constants import metrics
 
 
 class Player(Object):
-    def __init__(self, model, scale=[1, 1, 1], color=[0.0, 1.0, 0.0]):
+    def __init__(self, model, scale=[1, 1, 1], color=[1.0, 1.0, 1.0]):
         # sempre nasce na origem
         super().__init__(
             model, position=[0.0, 0.0, 0.0], rotation=[0, 0, 0], scale=scale
@@ -58,5 +58,5 @@ class Player(Object):
 
     def render(self, shader):
         shader.set_mat4("model", self.get_model_matrix())
-        shader.set_vec3("color", self.color)
+        shader.set_vec3("objectColor", self.color)
         self.model.render(shader)
