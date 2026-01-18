@@ -2,6 +2,7 @@ import glfw
 from OpenGL.GL import *
 import imgui
 from imgui.integrations.glfw import GlfwRenderer
+from src.engine.track import Track
 from src.constants import metrics, objects_path, textures_path, shaders_path
 from src.engine.shader import Shader
 from src.engine.skybox import Skybox
@@ -52,6 +53,11 @@ class Window:
             ]
         )
 
+        self.track  = Track(
+            self.shaders["track"], 
+            textures_path.LANES_TEXTURES["preguica"]
+        )
+
         self.camera = CameraManager()
         self.input = InputManager()
         self.input.register_callbacks(self.window)
@@ -69,6 +75,7 @@ class Window:
             self.models,
             self.skybox,
             self.imgui_renderer,
+            self.track,
         )
 
         self.start_scene = self.scene_manager.create_start_scene()
@@ -97,6 +104,10 @@ class Window:
             "hud": Shader(
                 vertex_path=shaders_path.VERTEX_HUD,
                 fragment_path=shaders_path.FRAGMENT_HUD,
+            ),
+            "track": Shader(
+                vertex_path=shaders_path.VERTEX_TRACK,
+                fragment_path=shaders_path.FRAGMENT_TRACK,
             ),
         }
         self.hud = HUD(self.shaders["hud"])
@@ -137,6 +148,8 @@ class Window:
                 self.game_scene = self.scene_manager.create_game_scene()
                 self.state = "playing"
 
+            self.track.update_scroll(metrics.TICK, metrics.SPEED_LANE_CHANGE)
+    
             self.scene_manager.update()
             self.scene_manager.render()
 

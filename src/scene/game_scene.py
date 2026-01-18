@@ -11,7 +11,7 @@ from src.objects.collectible import Collectible
 
 
 class GameScene:
-    def __init__(self, window, input_manager, camera, hud, shaders, models, skybox):
+    def __init__(self, window, input_manager, camera, hud, shaders, models, skybox, track):
         self.window = window
         self.input = input_manager
         self.camera = camera
@@ -19,6 +19,7 @@ class GameScene:
         self.shaders = shaders
         self.models = models
         self.skybox = skybox
+        self.track = track
         # Player
         self.player = Player(self.models["player"], scale=[2.0, 2.0, 2.0])
 
@@ -52,6 +53,8 @@ class GameScene:
         self.last_time = now
 
         self.hud.start_timer()
+
+        self.track.update_scroll(self.player_speed * delta_time)
 
         # Input
         if self.input.was_pressed(glfw.KEY_LEFT):
@@ -89,6 +92,9 @@ class GameScene:
         self.skybox.draw(self.shaders["skybox"].program)
         glDepthFunc(GL_LESS)
         glDepthMask(GL_TRUE)
+
+        # Track
+        self.track.render(projection_matrix, view_matrix)
 
         # Player
         self.shaders["player"].set_matrices(

@@ -15,6 +15,7 @@ class SceneManager:
         models,
         skybox,
         imgui_renderer,
+        track,
     ):
         self.window = window
         self.input = input_manager
@@ -24,6 +25,7 @@ class SceneManager:
         self.models = models
         self.skybox = skybox
         self.imgui_renderer = imgui_renderer
+        self.track = track
 
         self.current_scene = None
 
@@ -63,6 +65,7 @@ class SceneManager:
             self.shaders,
             self.models,
             self.skybox,
+            self.track,
         )
         self.set_scene(scene)
         return scene
