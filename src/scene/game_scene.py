@@ -3,6 +3,7 @@ import random
 import time
 import numpy as np
 from OpenGL.GL import *
+from src.engine import window
 from src.constants import metrics
 from src.objects.player import Player
 from src.objects.objects import Obstacle
@@ -21,8 +22,12 @@ class GameScene:
         self.skybox = skybox
         # Player
         self.player = Player(self.models["player"], scale=[2.0, 2.0, 2.0])
+        self.state = "playing"
+        self.death_timer = 0.0
+
 
         # Estado
+        self.game_over = False
         self.lanes = [-2.0, 0.0, 2.0]
         self.player_lane = 1
         self.obstacles = []
@@ -110,6 +115,17 @@ class GameScene:
             projection_matrix, view_matrix, self.player.get_model_matrix()
         )
 
+        if self.state == "dying":
+            self.death_timer += delta_time
+
+            if self.death_timer < 0.05:
+                self.player.position[1] += 8.0 * delta_time
+            else:
+                self.player.position[1] -= 12.0 * delta_time 
+            
+            if self.death_timer > 1.0:
+                self.state = "game_over"
+
         self.player.update(metrics.TICK)
         self.player.render(self.shaders["player"])
 
@@ -136,10 +152,14 @@ class GameScene:
 
         self._spawn_obstacles(metrics.TICK)
         self._update_obstacles(metrics.TICK)
-        for obs in self.obstacles:
-            if self.check_collision(self.player, obs, threshold=0.8):
-                # print("Colisão com obstáculo!")
-                break
+        if self.state == "playing":
+            for obs in self.obstacles:
+                if self.check_collision(self.player, obs, threshold=0.8):
+                    print("Colisão com obstáculo!")
+                    self.state = "dying"
+                    self.death_timer = 0.0
+                    self.game_over = True
+                    break
 
         self._spawn_collectibles(metrics.TICK)
         self._update_collectibles(metrics.TICK)

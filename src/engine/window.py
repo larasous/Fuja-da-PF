@@ -121,6 +121,25 @@ class Window:
         metrics.WINDOW_HEIGHT = height
         glViewport(0, 0, width, height)
 
+    def _reset_gl_state(self):
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDisable(GL_CULL_FACE)
+        
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        
+        glUseProgram(0)
+
+        glBindVertexArray(0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glViewport(0, 0, metrics.WINDOW_WIDTH, metrics.WINDOW_HEIGHT)
+        
     def run(self):
         while not glfw.window_should_close(self.window):
             glfw.poll_events()
@@ -136,6 +155,22 @@ class Window:
                 print("Mudando para PLAYING...")
                 self.game_scene = self.scene_manager.create_game_scene()
                 self.state = "playing"
+            
+            if self.state == "playing" and self.game_scene and self.game_scene.state == "game_over":
+                print("Mudando para GAME OVER...")
+                self._reset_gl_state()
+                self.lore_scene = self.scene_manager.create_lore_scene(
+                    "assets/lore/game_over.json"
+                )
+                self.state = "game_over"
+            
+            elif self.state == "game_over" and self.lore_scene and self.lore_scene.finished:
+                print("Reiniciando jogo...")
+                self.state = "start"
+                self.start_scene = self.scene_manager.create_start_scene()
+                self.lore_scene = None
+                self.game_scene = None
+
 
             self.scene_manager.update()
             self.scene_manager.render()
