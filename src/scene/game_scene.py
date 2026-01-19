@@ -9,6 +9,7 @@ from src.objects.player import Player
 from src.objects.objects import Obstacle
 from src.objects.collectible import Collectible
 from src.engine.audio import AudioManager
+from src.objects.lane import Lane
 from src.constants.colors import COLOR_PALETTE
 
 
@@ -54,6 +55,17 @@ class GameScene:
 
         # Tempo
         self.last_time = time.time()
+        
+        self.lanes = [-2.0, 0.0, 2.0]
+        self.lane_objects = [
+            Lane(width=2.0, depth=30.0, color=(0.8,0.2,0.2)),
+            Lane(width=2.0, depth=30.0, color=(0.2,0.8,0.2)),
+            Lane(width=2.0, depth=30.0, color=(0.2,0.2,0.8)),
+        ]
+
+        for lane_obj, lane_x in zip(self.lane_objects, self.lanes):
+            lane_obj.set_position(lane_x)
+
 
     def update(self):
         now = time.time()
@@ -113,6 +125,11 @@ class GameScene:
         self.skybox.draw(self.shaders["skybox"].program)
         glDepthFunc(GL_LESS)
         glDepthMask(GL_TRUE)
+        
+        shader_lane = self.shaders.get("lane")
+        if shader_lane:
+            for lane_obj in self.lane_objects:
+                lane_obj.render(shader_lane, projection_matrix, view_matrix)
 
         # Player
         self.shaders["player"].set_matrices(

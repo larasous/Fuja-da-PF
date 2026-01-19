@@ -83,7 +83,6 @@ class HUD:
         )
         print(f"Avançou para o nível {level_name}!")
 
-    # --- renderização de texto com cache ---
     def _get_text_texture(self, text):
         if text in self.text_cache:
             return self.text_cache[text]

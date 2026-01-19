@@ -36,9 +36,8 @@ class Player(Object):
             self.jump_velocity = self.jump_strength
 
     def update(self, delta_time):
-        # movimento suave no eixo X
         dx = self.target_x - self.position[0]
-        if abs(dx) > 0.01:  # tolerância
+        if abs(dx) > 0.01:
             step = self.speed * delta_time
             if abs(dx) < step:
                 self.position[0] = self.target_x

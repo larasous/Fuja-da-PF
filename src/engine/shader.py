@@ -69,3 +69,11 @@ class Shader:
     def set_vec3(self, name, vec):
         loc = glGetUniformLocation(self.program, name)
         glUniform3fv(loc, 1, np.array(vec, dtype=np.float32))
+    
+    def set_float(self, name, value):
+        loc = glGetUniformLocation(self.program, name)
+        glUniform1f(loc, float(value))
+
+    def set_int(self, name, value):
+        loc = glGetUniformLocation(self.program, name)
+        glUniform1i(loc, int(value))

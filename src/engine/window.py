@@ -98,6 +98,10 @@ class Window:
                 vertex_path=shaders_path.VERTEX_HUD,
                 fragment_path=shaders_path.FRAGMENT_HUD,
             ),
+            "lane": Shader(
+                vertex_path=shaders_path.VERTEX_LANE,
+                fragment_path=shaders_path.FRAGMENT_LANE,
+            ),
         }
         self.hud = HUD(self.shaders["hud"])
 
