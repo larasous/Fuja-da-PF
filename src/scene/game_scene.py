@@ -8,6 +8,7 @@ from src.constants import metrics
 from src.objects.player import Player
 from src.objects.objects import Obstacle
 from src.objects.collectible import Collectible
+from src.engine.audio import AudioManager
 from src.constants.colors import COLOR_PALETTE
 
 
@@ -24,6 +25,9 @@ class GameScene:
         self.player = Player(self.models["player"], scale=[2.0, 2.0, 2.0])
         self.state = "playing"
         self.death_timer = 0.0
+
+        self.music = AudioManager()
+        self.music.play_music("assets/sounds/background_sound.mp3")
 
 
         # Estado
@@ -125,6 +129,7 @@ class GameScene:
             
             if self.death_timer > 1.0:
                 self.state = "game_over"
+                self.music.stop_music()
 
         self.player.update(metrics.TICK)
         self.player.render(self.shaders["player"])
@@ -208,7 +213,7 @@ class GameScene:
                     scale=[1.0, 1.0, 1.0],
                     color=[1.0, 0.84, 0.0],
                 )
-                coin.set_transform([lane, 0.0, z_offset], [1.0, 1.0, 1.0])
+                coin.set_transform([lane, 0.3, z_offset], [1.0, 1.0, 1.0])
                 self.collectibles.append(coin)
 
             self.collectible_timer = 0.0

@@ -4,7 +4,7 @@ from src.constants import metrics
 
 
 class Object:
-    def __init__(self, model, position=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1]):
+    def __init__(self, model, position=[0, 0, 0], rotation=[0, 0, 0], scale=[1.0, 1.0, 1.0]):
         self.model = model
         self.position = np.array(position, dtype=np.float32)
         self.rotation = np.array(rotation, dtype=np.float32)
