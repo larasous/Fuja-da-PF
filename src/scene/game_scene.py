@@ -95,7 +95,6 @@ class GameScene:
         glClearColor(0.1, 0.1, 0.1, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        # Atualiza câmera
         self.camera.update(*self.player.position)
         view_matrix = self.camera.get_view_matrix()
         projection_matrix = self.camera.projection_matrix

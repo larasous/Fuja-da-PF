@@ -8,7 +8,6 @@ class Lane:
         self.color = color
         self.model = np.identity(4, dtype=np.float32)
 
-        # vértices de um quad
         vertices = np.array([
             -width/2, 0.0, -depth,
             width/2, 0.0, -depth,
